@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.google.mlkit.vision.demo" // Movido aquí para mayor compatibilidad
+    namespace "com.securepass.vision"
     compileSdkVersion 34
 
     defaultConfig {
-        applicationId "com.google.mlkit.vision.demo.pro"
+        applicationId "com.securepass.vision"
         minSdkVersion 21
         multiDexEnabled true
-        targetSdkVersion 34 // Actualizado a 34 para coincidir con compileSdk
+        targetSdkVersion 34
 
         versionCode 11
         versionName "1.11"
@@ -17,7 +17,7 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-    // ESTO ES LO QUE SOLUCIONA EL ERROR "cannot find symbol BuildConfig"
+
     buildFeatures {
         buildConfig = true
     }
@@ -54,20 +54,9 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.6.0'
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    // ML Kit - Detección de objetos
+    // ML Kit - Detección de objetos (NECESARIO PARA VIGILANCIA)
     implementation 'com.google.mlkit:object-detection:16.2.6'
     implementation 'com.google.mlkit:object-detection-custom:16.3.3'
-
-    // Otras funciones de ML Kit
-    implementation 'com.google.mlkit:barcode-scanning:16.2.0'
-    implementation 'com.google.mlkit:face-detection:16.1.2'
-    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.3.0'
-    implementation 'com.google.mlkit:image-labeling:17.0.5'
-    implementation 'com.google.mlkit:image-labeling-custom:16.3.1'
-    implementation 'com.google.mlkit:pose-detection:17.0.1-beta4'
-    implementation 'com.google.mlkit:pose-detection-accurate:17.0.1-beta4'
-    implementation 'com.google.mlkit:segmentation-selfie:16.0.0-beta2'
-    implementation 'com.google.mlkit:camera:16.0.0-beta1'
 
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'com.google.guava:guava:27.1-android'

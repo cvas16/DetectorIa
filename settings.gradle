@@ -1,2 +1,2 @@
-rootProject.name='ml-kit-vision-demo'
+rootProject.name = 'SecurePass'
 include ':app'
