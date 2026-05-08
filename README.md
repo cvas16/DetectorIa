@@ -1,19 +1,28 @@
-# Android ML Kit Vision demo with Video
-Google's ML-Kit-Vision demo (android) for pre encoded video. Demos for camera preview and still image are also included. This project is actually extension of Google's own sample. Google's sample link: https://github.com/googlesamples/mlkit/tree/master/android/vision-quickstart
+# Vigilante AI V3
 
-# Motivation
-Google's sample does not show how to work with pre encoded video, though it shows the processes for camera preview and still image.
+**Vigilante AI V3** es una aplicación avanzada de visión artificial para Android diseñada para la seguridad y el monitoreo en tiempo real. Utiliza las potentes APIs de **Google ML Kit** para detectar objetos, rostros y poses con alta precisión.
 
-# About the app
-We play a video with exoplayer and get every frame using different techniques mentioned later. Then we process those frames with ML Kit Vision api.
+Este proyecto es una evolución optimizada para ofrecer un rendimiento superior en la vigilancia mediante el uso de CameraX y procesamiento de video en tiempo real.
 
-Current launcher activty of the app is ".video.ChooserActivity". To see the the implementaios for camera preview and still image, make ".EntryChoiceActivity" as launcher activity.
-To know more about the app read from [here](https://github.com/googlesamples/mlkit/blob/master/android/vision-quickstart/README.md).
+## Características principales
+* **Detección en tiempo real:** Procesamiento de flujo de cámara en vivo utilizando CameraX.
+* **Múltiples modos de visualización:** 
+    * Modo Compatible (LivePreview)
+    * Modo Alto Rendimiento (CameraX)
+* **Detección avanzada:** Identificación de objetos, rostros y seguimiento de poses.
+* **Soporte de video:** Capacidad para procesar cuadros de video pre-grabados utilizando ExoPlayer.
 
-## Video frame grabbing techniques:
-* Reading pixels from OpenGL-ES context
-* Getting bitmap from TextureView
-* Converting Raw decoder data with renderscript
+## Configuración y Uso
+La actividad principal es `com.securepass.vision.kotlin.ChooserActivity`, la cual permite seleccionar entre los diferentes motores de detección disponibles.
 
-## Preview
-![](preview1.gif) ![](preview2.gif)
+## Tecnologías utilizadas
+* **Kotlin:** Lenguaje principal de desarrollo.
+* **ML Kit Vision API:** Motor de inteligencia artificial.
+* **CameraX:** API de cámara moderna para Android.
+* **ExoPlayer:** Para el procesamiento de video.
+
+## Vistas previas
+![Vista previa 1](preview1.gif) ![Vista previa 2](preview2.gif)
+
+---
+*Desarrollado por Secure Pass Vision - Versión 3.0*
