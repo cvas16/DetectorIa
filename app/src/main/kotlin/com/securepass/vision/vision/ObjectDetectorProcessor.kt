@@ -1,12 +1,11 @@
-
-package com.securepass.vision.kotlin.objectdetector
+package com.securepass.vision.vision
 
 import android.content.Context
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
-import com.securepass.vision.GraphicOverlay
-import com.securepass.vision.kotlin.VisionProcessorBase
+import com.securepass.vision.ui.components.GraphicOverlay
+import com.securepass.vision.ui.components.ObjectGraphic
 import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.ObjectDetector
@@ -26,11 +25,7 @@ class ObjectDetectorProcessor(
     try {
       detector.close()
     } catch (e: IOException) {
-      Log.e(
-        TAG,
-        "Exception thrown while trying to close object detector!",
-        e
-      )
+      Log.e(TAG, "Exception thrown while trying to close object detector!", e)
     }
   }
 

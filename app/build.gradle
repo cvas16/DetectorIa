@@ -41,6 +41,13 @@ android {
     aaptOptions {
         noCompress "tflite"
     }
+
+    sourceSets {
+        main {
+            java.srcDirs = []
+            kotlin.srcDirs = ['src/main/kotlin']
+        }
+    }
 }
 
 repositories {

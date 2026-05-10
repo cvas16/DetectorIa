@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.securepass.vision.kotlin.objectdetector
+package com.securepass.vision.ui.components
 
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import com.securepass.vision.GraphicOverlay
-import com.securepass.vision.GraphicOverlay.Graphic
+import com.securepass.vision.ui.components.GraphicOverlay
+import com.securepass.vision.ui.components.GraphicOverlay.Graphic
 import com.google.mlkit.vision.objects.DetectedObject
 import java.util.Locale
 import kotlin.math.abs

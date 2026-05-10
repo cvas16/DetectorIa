@@ -32,7 +32,7 @@
 
         <!-- ACTIVIDAD PRINCIPAL (Chooser de Kotlin) -->
         <activity
-            android:name=".kotlin.ChooserActivity"
+            android:name=".ui.activities.ChooserActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -42,15 +42,15 @@
 
         <!-- ACTIVIDADES DE KOTLIN -->
         <activity
-            android:name=".kotlin.LivePreviewActivity"
+            android:name=".ui.activities.LivePreviewActivity"
             android:exported="true" />
         <activity
-            android:name=".kotlin.CameraXLivePreviewActivity"
+            android:name=".ui.activities.CameraXLivePreviewActivity"
             android:exported="true" />
 
         <!-- AJUSTES -->
         <activity
-            android:name=".preference.SettingsActivity"
+            android:name=".ui.activities.SettingsActivity"
             android:exported="false" />
     </application>
 

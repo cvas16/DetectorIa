@@ -1,5 +1,4 @@
-
-package com.securepass.vision.kotlin
+package com.securepass.vision.ui.activities
 
 import android.content.Context
 import android.content.Intent
@@ -20,17 +19,16 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.annotation.KeepName
 import com.google.mlkit.common.model.LocalModel
-import com.securepass.vision.CameraSource
-import com.securepass.vision.CameraSourcePreview
-import com.securepass.vision.GraphicOverlay
 import com.securepass.vision.R
-import com.securepass.vision.kotlin.objectdetector.ObjectDetectorProcessor
-import com.securepass.vision.preference.PreferenceUtils
-import com.securepass.vision.preference.SettingsActivity
-import com.securepass.vision.preference.SettingsActivity.LaunchSource
+import com.securepass.vision.vision.CameraSource
+import com.securepass.vision.ui.components.CameraSourcePreview
+import com.securepass.vision.ui.components.GraphicOverlay
+import com.securepass.vision.vision.ObjectDetectorProcessor
+import com.securepass.vision.utils.PreferenceUtils
+import com.securepass.vision.ui.activities.SettingsActivity
+import com.securepass.vision.ui.activities.SettingsActivity.LaunchSource
 import java.io.IOException
 import java.util.ArrayList
-
 
 @KeepName
 class LivePreviewActivity :
@@ -63,13 +61,8 @@ class LivePreviewActivity :
     val options: MutableList<String> = ArrayList()
     options.add(SECURITY_MODE)
 
-    // Creating adapter for spinner
-    val dataAdapter =
-      ArrayAdapter(this, R.layout.spinner_style, options)
-
-    // Drop down layout style - list view with radio button
+    val dataAdapter = ArrayAdapter(this, R.layout.spinner_style, options)
     dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-    // attaching data adapter to spinner
     spinner.adapter = dataAdapter
     spinner.onItemSelectedListener = this
 
@@ -95,14 +88,7 @@ class LivePreviewActivity :
   }
 
   @Synchronized
-  override fun onItemSelected(
-    parent: AdapterView<*>?,
-    view: View?,
-    pos: Int,
-    id: Long
-  ) {
-    // An item was selected. You can retrieve the selected item using
-    // parent.getItemAtPosition(pos)
+  override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
     selectedModel = parent?.getItemAtPosition(pos).toString()
     Log.d(TAG, "Selected model: $selectedModel")
     preview?.stop()
@@ -114,9 +100,7 @@ class LivePreviewActivity :
     }
   }
 
-  override fun onNothingSelected(parent: AdapterView<*>?) {
-    // Do nothing.
-  }
+  override fun onNothingSelected(parent: AdapterView<*>?) {}
 
   override fun onCheckedChanged(buttonView: CompoundButton, isChecked: Boolean) {
     Log.d(TAG, "Set facing")
@@ -132,9 +116,8 @@ class LivePreviewActivity :
   }
 
   private fun createCameraSource(model: String) {
-    // If there's no existing cameraSource, create one.
     if (cameraSource == null) {
-      cameraSource = CameraSource(this, graphicOverlay)
+      cameraSource = CameraSource(this, graphicOverlay!!)
     }
     try {
       if (model == SECURITY_MODE) {
@@ -142,23 +125,17 @@ class LivePreviewActivity :
         val securityModel = LocalModel.Builder()
           .setAssetFilePath("custom_models/object_labeler.tflite")
           .build()
-        val securityOptions =
-          PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, securityModel)
+        val securityOptions = PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, securityModel)
         val prohibitedStr = getSharedPreferences("security_prefs", MODE_PRIVATE)
           .getString("prohibited_objects", "Knife,Weapon") ?: "Knife,Weapon"
         val prohibitedList = prohibitedStr.split(",")
         cameraSource!!.setMachineLearningFrameProcessor(
           ObjectDetectorProcessor(this, securityOptions, prohibitedList)
         )
-      } else {
-        Log.e(TAG, "Unknown model: $model")
       }
     } catch (e: Exception) {
       Log.e(TAG, "Can not create image processor: $model", e)
-      Toast.makeText(
-        applicationContext, "Can not create image processor: " + e.message,
-        Toast.LENGTH_LONG
-      ).show()
+      Toast.makeText(applicationContext, "Can not create image processor: " + e.message, Toast.LENGTH_LONG).show()
     }
   }
 
@@ -187,20 +164,9 @@ class LivePreviewActivity :
       .show()
   }
 
-  /**
-   * Starts or restarts the camera source, if it exists. If the camera source doesn't exist yet
-   * (e.g., because onResume was called before the camera source was created), this will be called
-   * again when the camera source is created.
-   */
   private fun startCameraSource() {
     if (cameraSource != null) {
       try {
-        if (preview == null) {
-          Log.d(TAG, "resume: Preview is null")
-        }
-        if (graphicOverlay == null) {
-          Log.d(TAG, "resume: graphOverlay is null")
-        }
         preview!!.start(cameraSource, graphicOverlay)
       } catch (e: IOException) {
         Log.e(TAG, "Unable to start camera source.", e)
@@ -212,12 +178,10 @@ class LivePreviewActivity :
 
   public override fun onResume() {
     super.onResume()
-    Log.d(TAG, "onResume")
     createCameraSource(selectedModel)
     startCameraSource()
   }
 
-  /** Stops the camera.  */
   override fun onPause() {
     super.onPause()
     preview?.stop()
@@ -225,80 +189,46 @@ class LivePreviewActivity :
 
   public override fun onDestroy() {
     super.onDestroy()
-    if (cameraSource != null) {
-      cameraSource?.release()
-    }
+    cameraSource?.release()
   }
 
   private val requiredPermissions: Array<String?>
     get() = try {
-      val info = this.packageManager
-        .getPackageInfo(this.packageName, PackageManager.GET_PERMISSIONS)
-      val ps = info.requestedPermissions
-      if (ps != null && ps.isNotEmpty()) {
-        ps
-      } else {
-        arrayOfNulls(0)
-      }
+      val info = this.packageManager.getPackageInfo(this.packageName, PackageManager.GET_PERMISSIONS)
+      info.requestedPermissions ?: arrayOfNulls(0)
     } catch (e: Exception) {
       arrayOfNulls(0)
     }
 
   private fun allPermissionsGranted(): Boolean {
     for (permission in requiredPermissions) {
-      if (!isPermissionGranted(this, permission)) {
-        return false
-      }
+      if (!isPermissionGranted(this, permission)) return false
     }
     return true
   }
 
   private val runtimePermissions: Unit
     get() {
-      val allNeededPermissions: MutableList<String?> = ArrayList()
+      val allNeededPermissions = ArrayList<String>()
       for (permission in requiredPermissions) {
-        if (!isPermissionGranted(this, permission)) {
-          allNeededPermissions.add(permission)
-        }
+        if (!isPermissionGranted(this, permission)) allNeededPermissions.add(permission!!)
       }
       if (allNeededPermissions.isNotEmpty()) {
-        ActivityCompat.requestPermissions(
-          this,
-          allNeededPermissions.toTypedArray(),
-          PERMISSION_REQUESTS
-        )
+        ActivityCompat.requestPermissions(this, allNeededPermissions.toTypedArray(), PERMISSION_REQUESTS)
       }
     }
 
-  override fun onRequestPermissionsResult(
-    requestCode: Int,
-    permissions: Array<String>,
-    grantResults: IntArray
-  ) {
-    Log.i(TAG, "Permission granted!")
-    if (allPermissionsGranted()) {
-      createCameraSource(selectedModel)
-    }
+  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    if (allPermissionsGranted()) createCameraSource(selectedModel)
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
   }
 
   companion object {
     private const val SECURITY_MODE = "Security Surveillance Mode"
-
     private const val TAG = "LivePreviewActivity"
     private const val PERMISSION_REQUESTS = 1
-    private fun isPermissionGranted(
-      context: Context,
-      permission: String?
-    ): Boolean {
-      if (ContextCompat.checkSelfPermission(context, permission!!)
-        == PackageManager.PERMISSION_GRANTED
-      ) {
-        Log.i(TAG, "Permission granted: $permission")
-        return true
-      }
-      Log.i(TAG, "Permission NOT granted: $permission")
-      return false
+    private fun isPermissionGranted(context: Context, permission: String?): Boolean {
+      return ContextCompat.checkSelfPermission(context, permission!!) == PackageManager.PERMISSION_GRANTED
     }
   }
 }
