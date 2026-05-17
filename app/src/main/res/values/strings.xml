@@ -11,6 +11,11 @@
     <string name="desc_camerax_live_preview_activity" translatable="false">Vigilancia (Modo Alto Rendimiento)</string>
 
     <string name="menu_item_settings" translatable="false">Ajustes</string>
+    <string name="menu_item_history" translatable="false">Historial de Alertas</string>
+    <string name="history_title" translatable="false">Alertas Detectadas</string>
+    <string name="history_empty" translatable="false">No se han detectado amenazas todavía.</string>
+    <string name="history_clear_all" translatable="false">Limpiar Historial</string>
+    <string name="history_confidence_label" translatable="false">Certeza: %1$d%%</string>
     <string name="custom_object_detection" translatable="false">Detector de Objetos Personalizado</string>
 
     <!-- Ajustes de la App -->
