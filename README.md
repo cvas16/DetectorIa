@@ -1,4 +1,4 @@
-# Vigilante AI V3
+# Vigilante AI 
 
 **Vigilante AI V3** es una aplicación avanzada de visión artificial para Android diseñada para la seguridad y el monitoreo en tiempo real. Utiliza las potentes APIs de **Google ML Kit** para detectar objetos, rostros y poses con alta precisión.
 
@@ -21,8 +21,6 @@ La actividad principal es `com.securepass.vision.kotlin.ChooserActivity`, la cua
 * **CameraX:** API de cámara moderna para Android.
 * **ExoPlayer:** Para el procesamiento de video.
 
-## Vistas previas
-![Vista previa 1](preview1.gif) ![Vista previa 2](preview2.gif)
 
 ---
-*Desarrollado por Secure Pass Vision - Versión 3.0*
+*Desarrollado por Secure Pass Vision*
