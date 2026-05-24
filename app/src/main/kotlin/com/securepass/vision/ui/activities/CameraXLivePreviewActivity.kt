@@ -30,6 +30,7 @@ import com.google.android.gms.common.annotation.KeepName
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.common.model.LocalModel
 import com.securepass.vision.R
+import com.securepass.vision.data.db.DatabaseHelper
 import com.securepass.vision.ui.components.GraphicOverlay
 import com.securepass.vision.viewmodel.CameraXViewModel
 import com.securepass.vision.vision.ObjectDetectorProcessor
@@ -65,6 +66,10 @@ class CameraXLivePreviewActivity :
     }
     cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
     setContentView(R.layout.activity_vision_camerax_live_preview)
+
+    val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.camera_toolbar)
+    setSupportActionBar(toolbar)
+    supportActionBar?.title = "Vigilante AI"
 
     previewView = findViewById(R.id.preview_view)
     graphicOverlay = findViewById(R.id.graphic_overlay)
@@ -204,9 +209,20 @@ class CameraXLivePreviewActivity :
             .setAssetFilePath("custom_models/object_labeler.tflite")
             .build()
           val securityOptions = PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, securityModel)
-          val prohibitedStr = getSharedPreferences("security_prefs", Context.MODE_PRIVATE)
-            .getString("prohibited_objects", "Knife,Weapon") ?: "Knife,Weapon"
-          val prohibitedList = prohibitedStr.split(",").map { it.trim() }
+
+          // 1. Obtener el grupo asignado al usuario desde SharedPreferences
+          val authPrefs = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+          val groupId = authPrefs.getLong("CURRENT_GROUP_ID", -1L)
+
+          // 2. Buscar las reglas del evento en la DB
+          val dbHelper = DatabaseHelper(this)
+          val group = dbHelper.getGroupById(groupId)
+
+          // 3. Usar los objetos del evento o unos por defecto si no hay evento
+          val prohibitedStr = group?.prohibitedItems ?: "Knife,Weapon"
+          val prohibitedList = prohibitedStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+
+          Log.d(TAG, "Cargando reglas para el evento: ${group?.name ?: "Ninguno"}. Prohibidos: $prohibitedList")
           ObjectDetectorProcessor(this, securityOptions, prohibitedList)
         }
         else -> throw IllegalStateException("Invalid model name")

@@ -13,5 +13,12 @@
         <!-- Configuración de la ventana -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
+    </style>
+
+    <style name="AppTheme.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="colorSurface">#1F1F1F</item>
+        <item name="colorOnSurface">@color/white</item>
     </style>
 </resources>

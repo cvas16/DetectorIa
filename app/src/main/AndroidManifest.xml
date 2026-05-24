@@ -30,15 +30,19 @@
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="ica" />
 
-        <!-- ACTIVIDAD PRINCIPAL (Chooser de Kotlin) -->
+        <!-- ACTIVIDAD DE LOGIN UNIFICADA (Launcher) -->
         <activity
-            android:name=".ui.activities.ChooserActivity"
+            android:name=".ui.activities.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.activities.ChooserActivity"
+            android:exported="false" />
 
         <!-- ACTIVIDADES DE KOTLIN -->
         <activity
@@ -52,6 +56,25 @@
             android:name=".ui.activities.HistoryActivity"
             android:exported="false"
             android:label="@string/history_title"
+            android:theme="@style/AppTheme" />
+
+
+        <activity
+            android:name=".ui.activities.AdminDashboardActivity"
+            android:exported="false"
+            android:label="Panel de Control"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name=".ui.activities.UserManagementActivity"
+            android:exported="false"
+            android:label="Gestión de Personal"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name=".ui.activities.EventManagementActivity"
+            android:exported="false"
+            android:label="Configuración de Eventos"
             android:theme="@style/AppTheme" />
 
         <!-- AJUSTES -->

@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.common.annotation.KeepName
 import com.google.mlkit.common.model.LocalModel
 import com.securepass.vision.R
+import com.securepass.vision.data.db.DatabaseHelper
 import com.securepass.vision.vision.CameraSource
 import com.securepass.vision.ui.components.CameraSourcePreview
 import com.securepass.vision.ui.components.GraphicOverlay
@@ -46,6 +47,10 @@ class LivePreviewActivity :
     super.onCreate(savedInstanceState)
     Log.d(TAG, "onCreate")
     setContentView(R.layout.activity_vision_live_preview)
+
+    val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.camera_toolbar)
+    setSupportActionBar(toolbar)
+    supportActionBar?.title = "Vigilante AI"
 
     preview = findViewById(R.id.preview_view)
     if (preview == null) {
@@ -126,9 +131,20 @@ class LivePreviewActivity :
           .setAssetFilePath("custom_models/object_labeler.tflite")
           .build()
         val securityOptions = PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, securityModel)
-        val prohibitedStr = getSharedPreferences("security_prefs", MODE_PRIVATE)
-          .getString("prohibited_objects", "Knife,Weapon") ?: "Knife,Weapon"
-        val prohibitedList = prohibitedStr.split(",")
+        
+        // 1. Obtener el grupo asignado al usuario
+        val authPrefs = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+        val groupId = authPrefs.getLong("CURRENT_GROUP_ID", -1L)
+
+        // 2. Buscar las reglas en la DB
+        val dbHelper = DatabaseHelper(this)
+        val group = dbHelper.getGroupById(groupId)
+
+        // 3. Usar los objetos del evento
+        val prohibitedStr = group?.prohibitedItems ?: "Knife,Weapon"
+        val prohibitedList = prohibitedStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        
+        Log.d(TAG, "Cargando reglas para el evento: ${group?.name ?: "Ninguno"}. Prohibidos: $prohibitedList")
         cameraSource!!.setMachineLearningFrameProcessor(
           ObjectDetectorProcessor(this, securityOptions, prohibitedList)
         )

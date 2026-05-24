@@ -17,6 +17,38 @@
     <string name="history_clear_all" translatable="false">Limpiar Historial</string>
     <string name="history_confidence_label" translatable="false">Certeza: %1$d%%</string>
     <string name="custom_object_detection" translatable="false">Detector de Objetos Personalizado</string>
+    <string name="admin_dashboard_title" translatable="false">Dashboard Administrador</string>
+    <string name="manage_users_title" translatable="false">Gestión de Personal</string>
+    <string name="manage_users_desc" translatable="false">Crear usuarios y asignar licencias</string>
+    <string name="manage_events_title" translatable="false">Configuración de Eventos</string>
+    <string name="manage_events_desc" translatable="false">Agrupar por lugar y asignar reglas</string>
+    <string name="add_event_desc" translatable="false">Añadir Evento</string>
+    <string name="add_user_desc" translatable="false">Agregar Usuario</string>
+    <string name="icon_desc_manage_users" translatable="false">Icono de gestión de personal</string>
+    <string name="icon_desc_manage_events" translatable="false">Icono de configuración de eventos</string>
+    <string name="admin_panel_description" translatable="false">Acceso exclusivo para administradores y gestión de eventos.</string>
+    <string name="logout" translatable="false">Cerrar Sesión</string>
+    <string name="username_hint" translatable="false">Usuario</string>
+    <string name="password_hint" translatable="false">Contraseña</string>
+    <string name="login_button" translatable="false">Iniciar Sesión</string>
+    <string name="sample_user_name" translatable="false">Nombre del Usuario</string>
+    <string name="user_label" translatable="false">Usuario: %1$s</string>
+    <string name="license_label" translatable="false">Licencia: %1$s</string>
+    <string name="assigned_to_label" translatable="false">Asignado a: %1$s</string>
+    <string name="none" translatable="false">Ninguno</string>
+    <string name="add_new_staff_title" translatable="false">Agregar Nuevo Personal</string>
+    <string name="full_name_hint" translatable="false">Nombre Completo</string>
+    <string name="license_code_hint" translatable="false">Licencia (Código)</string>
+    <string name="assign_event_label" translatable="false">Asignar Evento/Grupo</string>
+    <string name="event_name_hint" translatable="false">Nombre del Evento (Ej: Concierto Rock)</string>
+    <string name="event_location_hint" translatable="false">Ubicación (Ej: Estadio Nacional)</string>
+    <string name="prohibited_items_hint" translatable="false">Objetos Prohibidos (Ej: Bottle, Knife, Umbrella)</string>
+    <string name="comma_separated_helper" translatable="false">Separados por comas</string>
+    <string name="alert_icon_desc" translatable="false">Icono de alerta</string>
+    <string name="delete_desc" translatable="false">Eliminar</string>
+    <string name="sample_detection_title" translatable="false">Objeto Detectado</string>
+    <string name="sample_timestamp" translatable="false">01/01/2024 00:00</string>
+    <string name="sample_confidence" translatable="false">100% Certeza</string>
 
     <!-- Ajustes de la App -->
     <string name="pref_screen_title_live_preview" translatable="false">Ajustes de Vigilancia</string>

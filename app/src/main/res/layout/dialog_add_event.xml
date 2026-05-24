@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#1E1E1E"
+    tools:theme="@style/AppTheme">
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/event_name_hint"
+        android:textColorHint="@color/gray"
+        app:boxStrokeColor="@color/white">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_event_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/event_location_hint"
+        android:textColorHint="@color/gray"
+        app:boxStrokeColor="@color/white">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_event_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/prohibited_items_hint"
+        android:textColorHint="@color/gray"
+        app:boxStrokeColor="@color/white"
+        app:helperText="@string/comma_separated_helper">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_prohibited_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

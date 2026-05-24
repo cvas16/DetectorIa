@@ -3,12 +3,12 @@ package com.securepass.vision.ui.activities
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build.VERSION
-import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
@@ -19,30 +19,89 @@ import android.widget.TextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.securepass.vision.R
+import com.google.android.material.appbar.MaterialToolbar
 import java.util.ArrayList
 
 class ChooserActivity :
   AppCompatActivity(),
   ActivityCompat.OnRequestPermissionsResultCallback,
   OnItemClickListener {
+  
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     Log.d(TAG, "onCreate")
     setContentView(R.layout.activity_chooser)
 
+    val toolbar = findViewById<MaterialToolbar>(R.id.chooser_toolbar)
+    setSupportActionBar(toolbar)
+    supportActionBar?.title = "Vigilante AI"
+
+    // Leer privilegios del usuario logueado
+    val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+    val isAdmin = sharedPref.getBoolean("IS_ADMIN", false)
+
+    // Construir lista de actividades según el rol
+    val classesList = mutableListOf<Class<*>>()
+    val descriptionsList = mutableListOf<Int>()
+
+    // Opciones para todos los usuarios
+    classesList.add(LivePreviewActivity::class.java)
+    descriptionsList.add(R.string.desc_camera_source_activity)
+
+    classesList.add(CameraXLivePreviewActivity::class.java)
+    descriptionsList.add(R.string.desc_camerax_live_preview_activity)
+
+    classesList.add(HistoryActivity::class.java)
+    descriptionsList.add(R.string.menu_item_history)
+
+    // Solo añadir el Dashboard si es administrador
+    if (isAdmin) {
+      classesList.add(AdminDashboardActivity::class.java)
+      descriptionsList.add(R.string.admin_panel_description)
+    }
+
     val listView = findViewById<ListView>(R.id.test_activity_list_view)
-    val adapter = MyArrayAdapter(this, android.R.layout.simple_list_item_2, CLASSES)
-    adapter.setDescriptionIds(DESCRIPTION_IDS)
+    val adapter = MyArrayAdapter(this, android.R.layout.simple_list_item_2, classesList.toTypedArray())
+    adapter.setDescriptionIds(descriptionsList.toIntArray())
     listView.adapter = adapter
     listView.onItemClickListener = this
+
+    findViewById<View>(R.id.btn_logout).setOnClickListener {
+      logout()
+    }
 
     if (!allPermissionsGranted()) {
       getRuntimePermissions()
     }
   }
 
+  override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    menuInflater.inflate(R.menu.main_menu, menu)
+    return true
+  }
+
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    if (item.itemId == R.id.action_logout) {
+      logout()
+      return true
+    }
+    return super.onOptionsItemSelected(item)
+  }
+
+  private fun logout() {
+    val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+      clear()
+      apply()
+    }
+    val intent = Intent(this, LoginActivity::class.java)
+    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    startActivity(intent)
+    finish()
+  }
+
   override fun onItemClick(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
-    val clicked = CLASSES[position]
+    val clicked = parent?.adapter?.getItem(position) as Class<*>
     startActivity(Intent(this, clicked))
   }
 
@@ -95,9 +154,15 @@ class ChooserActivity :
         view = inflater.inflate(android.R.layout.simple_list_item_2, null)
       }
 
-      (view!!.findViewById<View>(android.R.id.text1) as TextView).text = classes[position].simpleName
+      val text1 = view!!.findViewById<TextView>(android.R.id.text1)
+      val text2 = view.findViewById<TextView>(android.R.id.text2)
+
+      text1.text = classes[position].simpleName
+      text1.setTextColor(ContextCompat.getColor(ctx, R.color.white))
+
       descriptionIds?.let {
-        (view.findViewById<View>(android.R.id.text2) as TextView).setText(it[position])
+        text2.setText(it[position])
+        text2.setTextColor(ContextCompat.getColor(ctx, R.color.gray))
       }
       return view
     }
@@ -110,25 +175,5 @@ class ChooserActivity :
   companion object {
     private const val TAG = "ChooserActivity"
     private const val PERMISSION_REQUESTS = 1
-    private val CLASSES = if (VERSION.SDK_INT < VERSION_CODES.LOLLIPOP)
-      arrayOf<Class<*>>(
-        LivePreviewActivity::class.java,
-        HistoryActivity::class.java
-      )
-      else arrayOf<Class<*>>(
-        LivePreviewActivity::class.java,
-        CameraXLivePreviewActivity::class.java,
-        HistoryActivity::class.java
-      )
-    private val DESCRIPTION_IDS = if (VERSION.SDK_INT < VERSION_CODES.LOLLIPOP)
-      intArrayOf(
-        R.string.desc_camera_source_activity,
-        R.string.menu_item_history
-      )
-      else intArrayOf(
-        R.string.desc_camera_source_activity,
-        R.string.desc_camerax_live_preview_activity,
-        R.string.menu_item_history
-      )
   }
 }
