@@ -77,6 +77,12 @@
             android:label="Configuración de Eventos"
             android:theme="@style/AppTheme" />
 
+        <activity
+            android:name=".ui.activities.GlobalHistoryActivity"
+            android:exported="false"
+            android:label="@string/global_history_toolbar_title"
+            android:theme="@style/AppTheme" />
+
         <!-- AJUSTES -->
         <activity
             android:name=".ui.activities.SettingsActivity"

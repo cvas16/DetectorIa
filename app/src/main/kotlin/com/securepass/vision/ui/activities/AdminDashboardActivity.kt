@@ -36,6 +36,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         val cardManageUsers = findViewById<MaterialCardView>(R.id.card_manage_users)
         val cardManageEvents = findViewById<MaterialCardView>(R.id.card_manage_events)
+        val cardGlobalHistory = findViewById<MaterialCardView>(R.id.card_global_history)
 
         cardManageUsers.setOnClickListener {
             val intent = Intent(this, UserManagementActivity::class.java)
@@ -44,6 +45,11 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         cardManageEvents.setOnClickListener {
             val intent = Intent(this, EventManagementActivity::class.java)
+            startActivity(intent)
+        }
+
+        cardGlobalHistory.setOnClickListener {
+            val intent = Intent(this, GlobalHistoryActivity::class.java)
             startActivity(intent)
         }
 

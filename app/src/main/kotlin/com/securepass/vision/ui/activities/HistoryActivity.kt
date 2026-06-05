@@ -54,7 +54,10 @@ class HistoryActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
-        val events = dbHelper.getAllDetections()
+        val sharedPref = getSharedPreferences("AUTH_PREFS", android.content.Context.MODE_PRIVATE)
+        val currentUserId = sharedPref.getString("CURRENT_USER_ID", "unknown") ?: "unknown"
+        
+        val events = dbHelper.getDetectionsByUserId(currentUserId)
         if (events.isEmpty()) {
             recyclerView.visibility = View.GONE
             emptyState.visibility = View.VISIBLE

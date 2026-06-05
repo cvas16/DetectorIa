@@ -9,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.securepass.vision.R
 import com.securepass.vision.data.db.DatabaseHelper
+import androidx.lifecycle.lifecycleScope
+import com.securepass.vision.data.api.RetrofitClient
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
@@ -17,9 +20,9 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Verificar sesión existente antes de mostrar el login
+        // Verificar sesión existente completa antes de mostrar el login
         val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-        if (sharedPref.contains("IS_ADMIN")) {
+        if (sharedPref.contains("CURRENT_USER_ID")) {
             val isAdmin = sharedPref.getBoolean("IS_ADMIN", false)
             if (isAdmin) {
                 navigateToAdminDashboard()
@@ -46,34 +49,64 @@ class LoginActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 1. Verificar si es Administrador (Hardcoded para prototipo)
-            if (username == "admin" && password == "admin123") {
-                val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-                with(sharedPref.edit()) {
-                    putBoolean("IS_ADMIN", true)
-                    putString("CURRENT_USER_NAME", "Administrador")
-                    apply()
+            lifecycleScope.launch {
+                try {
+                    // Primero intentamos con el API remoto
+                    val response = RetrofitClient.instance.getAllUsers()
+                    if (response.isSuccessful) {
+                        val remoteUsers = response.body()
+                        val remoteUser = remoteUsers?.find { it.username == username && it.password == password }
+                        if (remoteUser != null) {
+                            saveSessionAndNavigate(remoteUser)
+                            return@launch
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Si falla la red, continuamos con la base de datos local
                 }
-                navigateToAdminDashboard()
-                return@setOnClickListener
-            }
 
-            // 2. Verificar en la Base de Datos si es un usuario (Personal)
-            val user = dbHelper.getUserByUsername(username)
-            if (user != null && user.password == password) {
-                // Guardar ID del usuario en SharedPreferences para saber quién está logueado
-                val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-                with(sharedPref.edit()) {
-                    putBoolean("IS_ADMIN", false)
-                    putLong("CURRENT_USER_ID", user.id)
-                    putString("CURRENT_USER_NAME", user.name)
-                    putLong("CURRENT_GROUP_ID", user.groupId)
-                    apply()
+                // Verificar en la Base de Datos local (Incluye al admin si fue sincronizado o insertado)
+                val user = dbHelper.getUserByUsername(username)
+                if (user != null && user.password == password) {
+                    saveSessionAndNavigate(user)
+                } else {
+                    // Fallback de seguridad: Admin por defecto (solo si no hay internet Y no está en DB)
+                    if (username == "admin" && password == "admin123") {
+                        val adminUser = com.securepass.vision.model.User(
+                            id = "admin-id",
+                            name = "Administrador",
+                            username = "admin",
+                            password = "admin123",
+                            licenseKey = "MASTER",
+                            groupId = 0,
+                            role = "admin"
+                        )
+                        saveSessionAndNavigate(adminUser)
+                    } else {
+                        Toast.makeText(this@LoginActivity, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                navigateToCamera()
-            } else {
-                Toast.makeText(this, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun saveSessionAndNavigate(user: com.securepass.vision.model.User) {
+        // Sincronización inmediata: Guardar el usuario que acaba de loguearse en la DB local
+        dbHelper.insertUser(user)
+
+        val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+        with(sharedPref.edit()) {
+            putBoolean("IS_ADMIN", user.role == "admin")
+            putString("CURRENT_USER_ID", user.id)
+            putString("CURRENT_USER_NAME", user.name)
+            putLong("CURRENT_GROUP_ID", user.groupId)
+            putString("CURRENT_USER_ROLE", user.role)
+            apply()
+        }
+        if (user.role == "admin") {
+            navigateToAdminDashboard()
+        } else {
+            navigateToCamera()
         }
     }
 

@@ -77,6 +77,24 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="@string/user_role_label"
+        android:textColor="@color/gray"
+        android:textSize="12sp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="4dp"/>
+
+    <Spinner
+        android:id="@+id/spinner_dialog_role"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/spinner_style"
+        android:minHeight="48dp"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="@string/assign_event_label"
         android:textColor="@color/gray"
         android:textSize="12sp"

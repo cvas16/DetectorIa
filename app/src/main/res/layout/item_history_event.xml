@@ -54,6 +54,15 @@
                 android:textSize="13sp"
                 android:text="@string/sample_timestamp"
                 tools:text="09/05/2026 23:30" />
+
+            <TextView
+                android:id="@+id/event_staff_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#BBBBBB"
+                android:textSize="12sp"
+                tools:text="Staff: Juan | Evento: Acceso A" />
         </LinearLayout>
 
         <TextView

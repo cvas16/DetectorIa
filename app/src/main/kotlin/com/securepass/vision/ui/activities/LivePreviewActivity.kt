@@ -144,9 +144,21 @@ class LivePreviewActivity :
         val prohibitedStr = group?.prohibitedItems ?: "Knife,Weapon"
         val prohibitedList = prohibitedStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         
-        Log.d(TAG, "Cargando reglas para el evento: ${group?.name ?: "Ninguno"}. Prohibidos: $prohibitedList")
+        val userId = authPrefs.getString("CURRENT_USER_ID", "0") ?: "0"
+        val userName = authPrefs.getString("CURRENT_USER_NAME", "Staff") ?: "Staff"
+        val eventName = group?.name ?: "Evento Desconocido"
+
+        Log.d(TAG, "Cargando reglas para el evento: $eventName. Prohibidos: $prohibitedList")
         cameraSource!!.setMachineLearningFrameProcessor(
-          ObjectDetectorProcessor(this, securityOptions, prohibitedList)
+          ObjectDetectorProcessor(
+            this, 
+            securityOptions, 
+            prohibitedList,
+            userId,
+            userName,
+            groupId,
+            eventName
+          )
         )
       }
     } catch (e: Exception) {

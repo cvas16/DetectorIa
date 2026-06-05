@@ -39,6 +39,10 @@ class ChooserActivity :
     // Leer privilegios del usuario logueado
     val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
     val isAdmin = sharedPref.getBoolean("IS_ADMIN", false)
+    val userName = sharedPref.getString("CURRENT_USER_NAME", "Usuario")
+    val userRole = sharedPref.getString("CURRENT_USER_ROLE", "Staff")
+
+    toolbar.subtitle = "Sesión: $userName ($userRole)"
 
     // Construir lista de actividades según el rol
     val classesList = mutableListOf<Class<*>>()

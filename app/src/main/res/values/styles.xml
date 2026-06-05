@@ -21,4 +21,11 @@
         <item name="colorSurface">#1F1F1F</item>
         <item name="colorOnSurface">@color/white</item>
     </style>
+
+    <style name="CustomAlertDialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <item name="android:background">#1E1E1E</item>
+        <item name="colorSurface">#1E1E1E</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+    </style>
 </resources>

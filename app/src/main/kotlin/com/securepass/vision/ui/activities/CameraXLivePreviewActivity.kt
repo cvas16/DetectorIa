@@ -222,8 +222,20 @@ class CameraXLivePreviewActivity :
           val prohibitedStr = group?.prohibitedItems ?: "Knife,Weapon"
           val prohibitedList = prohibitedStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
-          Log.d(TAG, "Cargando reglas para el evento: ${group?.name ?: "Ninguno"}. Prohibidos: $prohibitedList")
-          ObjectDetectorProcessor(this, securityOptions, prohibitedList)
+          val userId = authPrefs.getString("CURRENT_USER_ID", "unknown_id") ?: "unknown_id"
+          val userName = authPrefs.getString("CURRENT_USER_NAME", "Unknown Staff") ?: "Unknown Staff"
+          val eventName = group?.name ?: "Evento Desconocido"
+
+          Log.d("AUTH_DEBUG", "Cargando procesador - User: $userName ($userId), Evento: $eventName")
+          ObjectDetectorProcessor(
+            this, 
+            securityOptions, 
+            prohibitedList,
+            userId,
+            userName,
+            groupId,
+            eventName
+          )
         }
         else -> throw IllegalStateException("Invalid model name")
       }

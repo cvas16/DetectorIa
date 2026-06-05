@@ -26,6 +26,13 @@
     <string name="add_user_desc" translatable="false">Agregar Usuario</string>
     <string name="icon_desc_manage_users" translatable="false">Icono de gestión de personal</string>
     <string name="icon_desc_manage_events" translatable="false">Icono de configuración de eventos</string>
+    <string name="icon_desc_global_history" translatable="false">Icono de historial global</string>
+    <string name="global_history_title" translatable="false">Historial Global</string>
+    <string name="global_history_desc" translatable="false">Monitorear detecciones en la nube</string>
+    <string name="global_history_toolbar_title" translatable="false">Historial Global (Nube)</string>
+    <string name="cloud_sync_error" translatable="false">Error al cargar datos de la nube</string>
+    <string name="network_failure" translatable="false">Fallo de conexión</string>
+    <string name="delete_local_only" translatable="false">Eliminación solo permitida en DB local</string>
     <string name="admin_panel_description" translatable="false">Acceso exclusivo para administradores y gestión de eventos.</string>
     <string name="logout" translatable="false">Cerrar Sesión</string>
     <string name="username_hint" translatable="false">Usuario</string>
@@ -37,15 +44,20 @@
     <string name="assigned_to_label" translatable="false">Asignado a: %1$s</string>
     <string name="none" translatable="false">Ninguno</string>
     <string name="add_new_staff_title" translatable="false">Agregar Nuevo Personal</string>
+    <string name="configure_event_title" translatable="false">Configurar Evento</string>
     <string name="full_name_hint" translatable="false">Nombre Completo</string>
     <string name="license_code_hint" translatable="false">Licencia (Código)</string>
     <string name="assign_event_label" translatable="false">Asignar Evento/Grupo</string>
+    <string name="user_role_label" translatable="false">Tipo de Usuario (Rol)</string>
+    <string name="role_admin" translatable="false">Administrador</string>
+    <string name="role_staff" translatable="false">Personal (Staff)</string>
     <string name="event_name_hint" translatable="false">Nombre del Evento (Ej: Concierto Rock)</string>
     <string name="event_location_hint" translatable="false">Ubicación (Ej: Estadio Nacional)</string>
     <string name="prohibited_items_hint" translatable="false">Objetos Prohibidos (Ej: Bottle, Knife, Umbrella)</string>
     <string name="comma_separated_helper" translatable="false">Separados por comas</string>
     <string name="alert_icon_desc" translatable="false">Icono de alerta</string>
     <string name="delete_desc" translatable="false">Eliminar</string>
+    <string name="edit_desc" translatable="false">Editar</string>
     <string name="sample_detection_title" translatable="false">Objeto Detectado</string>
     <string name="sample_timestamp" translatable="false">01/01/2024 00:00</string>
     <string name="sample_confidence" translatable="false">100% Certeza</string>

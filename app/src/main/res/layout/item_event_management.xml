@@ -18,41 +18,33 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
-            android:layout_toStartOf="@+id/btn_delete_user"
+            android:layout_toStartOf="@+id/ll_actions"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tv_user_full_name"
+                android:id="@+id/tv_event_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/sample_user_name"
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                tools:text="Concierto Rock" />
 
             <TextView
-                android:id="@+id/tv_username"
+                android:id="@+id/tv_event_location"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="@string/username_hint"
-                android:textColor="@color/gray" />
+                android:textColor="@color/gray"
+                tools:text="Ubicación: Estadio Nacional" />
 
             <TextView
-                android:id="@+id/tv_license_key"
+                android:id="@+id/tv_prohibited_items"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="@string/manage_users_title"
-                android:textColor="#4CAF50" />
-
-            <TextView
-                android:id="@+id/tv_assigned_group"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/none"
-                android:textColor="@color/gray" />
+                android:textColor="#FFB74D"
+                tools:text="Prohibido: Knife, Weapon" />
         </LinearLayout>
 
         <LinearLayout
@@ -64,16 +56,16 @@
             android:orientation="horizontal">
 
             <ImageButton
-                android:id="@+id/btn_edit_user"
+                android:id="@+id/btn_edit_event"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Editar"
+                android:contentDescription="@string/edit_desc"
                 android:src="@android:drawable/ic_menu_edit"
                 app:tint="@color/white" />
 
             <ImageButton
-                android:id="@+id/btn_delete_user"
+                android:id="@+id/btn_delete_event"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"

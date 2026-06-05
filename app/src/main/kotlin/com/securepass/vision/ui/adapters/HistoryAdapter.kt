@@ -22,6 +22,7 @@ class HistoryAdapter(
         val icon: ImageView = view.findViewById(R.id.event_icon)
         val title: TextView = view.findViewById(R.id.event_title)
         val timestamp: TextView = view.findViewById(R.id.event_timestamp)
+        val staffInfo: TextView = view.findViewById(R.id.event_staff_info)
         val confidence: TextView = view.findViewById(R.id.event_confidence)
         val btnDelete: ImageView = view.findViewById(R.id.btn_delete_event)
     }
@@ -38,6 +39,8 @@ class HistoryAdapter(
         
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         holder.timestamp.text = sdf.format(Date(event.timestamp))
+        
+        holder.staffInfo.text = "Staff: ${event.userName} | Evento: ${event.eventName}"
         
         holder.confidence.text = String.format(Locale.getDefault(), "%.0f%% Certeza", event.confidence * 100)
         
