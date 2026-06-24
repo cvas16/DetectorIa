@@ -45,7 +45,7 @@ class HistoryActivity : AppCompatActivity() {
                 showEventDetails(event.objectLabel, event.confidence)
             },
             onDeleteClick = { event ->
-                dbHelper.deleteDetection(event.id)
+                event.id?.let { dbHelper.deleteDetection(it) }
                 loadData()
             }
         )
@@ -54,7 +54,7 @@ class HistoryActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
-        val sharedPref = getSharedPreferences("AUTH_PREFS", android.content.Context.MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
         val currentUserId = sharedPref.getString("CURRENT_USER_ID", "unknown") ?: "unknown"
         
         val events = dbHelper.getDetectionsByUserId(currentUserId)
@@ -69,9 +69,9 @@ class HistoryActivity : AppCompatActivity() {
     }
 
     private fun showEventDetails(label: String, confidence: Float) {
-        AlertDialog.Builder(this, androidx.appcompat.R.style.Theme_AppCompat_Dialog_Alert)
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setTitle(label)
-            .setMessage("Detección confirmada con un ${String.format(java.util.Locale.getDefault(), "%.1f%%", confidence * 100)} de confianza.")
+            .setMessage(getString(R.string.history_confidence_label, (confidence * 100).toInt()))
             .setPositiveButton(R.string.ok, null)
             .show()
     }

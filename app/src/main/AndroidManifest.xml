@@ -30,7 +30,7 @@
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="ica" />
 
-        <!-- ACTIVIDAD DE LOGIN UNIFICADA (Launcher) -->
+        <!-- ACTIVIDAD DE LOGIN  -->
         <activity
             android:name=".ui.activities.LoginActivity"
             android:exported="true">

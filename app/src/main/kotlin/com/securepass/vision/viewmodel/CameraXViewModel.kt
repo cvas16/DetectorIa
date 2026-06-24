@@ -9,13 +9,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.util.concurrent.ExecutionException
 
-/** View model for interacting with CameraX. */
+/** Modelo de vista para interactuar con CameraX. */
 class CameraXViewModel(application: Application) : AndroidViewModel(application) {
 
     private var cameraProviderLiveData: MutableLiveData<ProcessCameraProvider>? = null
 
     /**
-     * Create an instance which interacts with the camera service via the given application context.
+     * Creamos una instancia que interactúe con el servicio de cámara a través de la aplicacion.
      */
     fun getProcessCameraProvider(): LiveData<ProcessCameraProvider> {
         if (cameraProviderLiveData == null) {

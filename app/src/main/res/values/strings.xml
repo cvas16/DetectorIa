@@ -22,6 +22,14 @@
     <string name="manage_users_desc" translatable="false">Crear usuarios y asignar licencias</string>
     <string name="manage_events_title" translatable="false">Configuración de Eventos</string>
     <string name="manage_events_desc" translatable="false">Agrupar por lugar y asignar reglas</string>
+    <string name="event_saved_cloud" translatable="false">¡Evento sincronizado con la nube!</string>
+    <string name="event_saved_local" translatable="false">Guardado localmente (Sin red)</string>
+    <string name="delete_event_title" translatable="false">Eliminar Evento</string>
+    <string name="delete_event_confirmation" translatable="false">¿Estás seguro de que deseas eliminar este evento?</string>
+    <string name="action_delete" translatable="false">Eliminar</string>
+    <string name="action_save" translatable="false">Guardar</string>
+    <string name="action_update" translatable="false">Actualizar</string>
+    <string name="action_cancel" translatable="false">Cancelar</string>
     <string name="add_event_desc" translatable="false">Añadir Evento</string>
     <string name="add_user_desc" translatable="false">Agregar Usuario</string>
     <string name="icon_desc_manage_users" translatable="false">Icono de gestión de personal</string>
@@ -41,7 +49,29 @@
     <string name="sample_user_name" translatable="false">Nombre del Usuario</string>
     <string name="user_label" translatable="false">Usuario: %1$s</string>
     <string name="license_label" translatable="false">Licencia: %1$s</string>
-    <string name="assigned_to_label" translatable="false">Asignado a: %1$s</string>
+    <string name="assigned_event_label" translatable="false">Evento: %1$s</string>
+    <string name="reassign_event_title">Reasignar Evento a %1$s</string>
+    <string name="reassign_event_message">Seleccione el nuevo evento de seguridad:</string>
+    <string name="edit_user_title">Editar Usuario</string>
+    <string name="delete_user_title">Eliminar Usuario</string>
+    <string name="delete_user_confirmation">¿Estás seguro de que deseas eliminar a %1$s? Esta acción no se puede deshacer.</string>
+    <string name="error_api_local">Error al cargar desde API, usando local</string>
+    <string name="error_no_connection_local">Sin conexión, usando datos locales</string>
+    <string name="save_remote_local_success">Usuario guardado en remoto y local</string>
+    <string name="save_local_api_error">Guardado solo localmente (Error API)</string>
+    <string name="save_local_no_connection">Guardado localmente (Sin conexión)</string>
+    <string name="fill_all_fields">Por favor complete todos los campos</string>
+    <string name="sync_api_success">Sincronizado con API</string>
+    <string name="update_local_api_error">Actualizado localmente (Error API)</string>
+    <string name="update_local_no_connection">Actualizado localmente (Sin conexión)</string>
+    <string name="update_remote_local_success">Usuario actualizado en remoto y local</string>
+    <string name="user_deleted_success">Usuario eliminado</string>
+    <string name="error_deleting_user">Error al eliminar</string>
+    <string name="btn_save">Guardar</string>
+    <string name="btn_update">Actualizar</string>
+    <string name="btn_delete">Eliminar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="no_assigned_group">Sin asignar</string>
     <string name="none" translatable="false">Ninguno</string>
     <string name="add_new_staff_title" translatable="false">Agregar Nuevo Personal</string>
     <string name="configure_event_title" translatable="false">Configurar Evento</string>
@@ -55,12 +85,15 @@
     <string name="event_location_hint" translatable="false">Ubicación (Ej: Estadio Nacional)</string>
     <string name="prohibited_items_hint" translatable="false">Objetos Prohibidos (Ej: Bottle, Knife, Umbrella)</string>
     <string name="comma_separated_helper" translatable="false">Separados por comas</string>
+    <string name="event_location_format" translatable="false">📍 %1$s</string>
+    <string name="event_prohibited_format" translatable="false">🚫 %1$s</string>
     <string name="alert_icon_desc" translatable="false">Icono de alerta</string>
     <string name="delete_desc" translatable="false">Eliminar</string>
     <string name="edit_desc" translatable="false">Editar</string>
     <string name="sample_detection_title" translatable="false">Objeto Detectado</string>
     <string name="sample_timestamp" translatable="false">01/01/2024 00:00</string>
     <string name="sample_confidence" translatable="false">100% Certeza</string>
+    <string name="history_staff_info_format" translatable="false">Staff: %1$s | Evento: %2$s</string>
 
     <!-- Ajustes de la App -->
     <string name="pref_screen_title_live_preview" translatable="false">Ajustes de Vigilancia</string>

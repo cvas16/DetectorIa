@@ -6,9 +6,9 @@ import com.securepass.vision.model.FrameMetadata
 import com.securepass.vision.ui.components.GraphicOverlay
 import java.nio.ByteBuffer
 
-/** An interface to process the images with different detectors. */
+/** Interfaz para procesar las imágenes con diferentes detectores. */
 interface VisionImageProcessor {
-  /** Processes a protein from [ByteBuffer]. */
+  /** Procesa un búfer de imagen desde [ByteBuffer]. */
   @Throws(MlKitException::class)
   fun processByteBuffer(
     data: ByteBuffer,
@@ -16,10 +16,10 @@ interface VisionImageProcessor {
     graphicOverlay: GraphicOverlay
   )
 
-  /** Processes [ImageProxy] from CameraX. */
+  /** Procesa [ImageProxy] desde CameraX. */
   @Throws(MlKitException::class)
   fun processImageProxy(image: ImageProxy, graphicOverlay: GraphicOverlay)
 
-  /** Stops the underlying machine learning detector and release resources. */
+  /** Detiene el detector de aprendizaje automático subyacente y libera recursos. */
   fun stop()
 }

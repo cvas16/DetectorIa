@@ -10,31 +10,31 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     override fun onCreate(db: SQLiteDatabase) {
         val createDetectionsTable = ("CREATE TABLE $TABLE_DETECTIONS ("
-                + "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "$COLUMN_ID TEXT PRIMARY KEY,"
                 + "$COLUMN_LABEL TEXT,"
                 + "$COLUMN_CONFIDENCE REAL,"
                 + "$COLUMN_TIMESTAMP INTEGER,"
                 + "$COLUMN_ALERT_LEVEL TEXT,"
                 + "$COLUMN_DETECTION_USER_ID TEXT,"
                 + "$COLUMN_DETECTION_USER_NAME TEXT,"
-                + "$COLUMN_DETECTION_EVENT_ID INTEGER,"
+                + "$COLUMN_DETECTION_EVENT_ID TEXT,"
                 + "$COLUMN_DETECTION_EVENT_NAME TEXT"
                 + ")")
         db.execSQL(createDetectionsTable)
 
         val createUsersTable = ("CREATE TABLE $TABLE_USERS ("
-                + "$COLUMN_USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "$COLUMN_USER_ID TEXT PRIMARY KEY,"
                 + "$COLUMN_USER_NAME TEXT,"
                 + "$COLUMN_USER_USERNAME TEXT UNIQUE,"
                 + "$COLUMN_USER_PASSWORD TEXT,"
                 + "$COLUMN_USER_LICENSE TEXT,"
-                + "$COLUMN_USER_GROUP_ID INTEGER,"
+                + "$COLUMN_USER_GROUP_ID TEXT,"
                 + "$COLUMN_USER_ROLE TEXT"
                 + ")")
         db.execSQL(createUsersTable)
 
         val createGroupsTable = ("CREATE TABLE $TABLE_GROUPS ("
-                + "$COLUMN_GROUP_ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "$COLUMN_GROUP_ID TEXT PRIMARY KEY,"
                 + "$COLUMN_GROUP_NAME TEXT,"
                 + "$COLUMN_GROUP_LOCATION TEXT,"
                 + "$COLUMN_GROUP_PROHIBITED TEXT"
@@ -53,11 +53,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     fun insertUser(user: com.securepass.vision.model.User): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
-            // Usamos el ID de MockAPI para evitar duplicados
-            val numericId = user.id.toLongOrNull()
-            if (numericId != null) {
-                put(COLUMN_USER_ID, numericId)
-            }
+            put(COLUMN_USER_ID, user.id)
             put(COLUMN_USER_NAME, user.name)
             put(COLUMN_USER_USERNAME, user.username)
             put(COLUMN_USER_PASSWORD, user.password)
@@ -81,7 +77,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return db.update(TABLE_USERS, values, "$COLUMN_USER_ID = ?", arrayOf(user.id))
     }
 
-    fun updateUserGroup(userId: String, groupId: Long): Int {
+    fun updateUserGroup(userId: String, groupId: String): Int {
         val db = this.writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_USER_GROUP_ID, groupId)
@@ -101,7 +97,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     username = getString(getColumnIndexOrThrow(COLUMN_USER_USERNAME)),
                     password = getString(getColumnIndexOrThrow(COLUMN_USER_PASSWORD)),
                     licenseKey = getString(getColumnIndexOrThrow(COLUMN_USER_LICENSE)),
-                    groupId = getLong(getColumnIndexOrThrow(COLUMN_USER_GROUP_ID)),
+                    groupId = getString(getColumnIndexOrThrow(COLUMN_USER_GROUP_ID)),
                     role = getString(getColumnIndexOrThrow(COLUMN_USER_ROLE))
                 ))
             }
@@ -119,6 +115,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     fun insertGroup(group: com.securepass.vision.model.SecurityEventGroup): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
+            put(COLUMN_GROUP_ID, group.id) 
             put(COLUMN_GROUP_NAME, group.name)
             put(COLUMN_GROUP_LOCATION, group.location)
             put(COLUMN_GROUP_PROHIBITED, group.prohibitedItems)
@@ -133,7 +130,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_GROUP_LOCATION, group.location)
             put(COLUMN_GROUP_PROHIBITED, group.prohibitedItems)
         }
-        return db.update(TABLE_GROUPS, values, "$COLUMN_GROUP_ID = ?", arrayOf(group.id.toString()))
+        return db.update(TABLE_GROUPS, values, "$COLUMN_GROUP_ID = ?", arrayOf(group.id))
     }
 
     fun getAllGroups(): List<com.securepass.vision.model.SecurityEventGroup> {
@@ -143,7 +140,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         with(cursor) {
             while (moveToNext()) {
                 groups.add(com.securepass.vision.model.SecurityEventGroup(
-                    id = getLong(getColumnIndexOrThrow(COLUMN_GROUP_ID)),
+                    id = getString(getColumnIndexOrThrow(COLUMN_GROUP_ID)), // Leer como String
                     name = getString(getColumnIndexOrThrow(COLUMN_GROUP_NAME)),
                     location = getString(getColumnIndexOrThrow(COLUMN_GROUP_LOCATION)),
                     prohibitedItems = getString(getColumnIndexOrThrow(COLUMN_GROUP_PROHIBITED))
@@ -154,18 +151,18 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return groups
     }
 
-    fun deleteGroup(id: Long) {
+    fun deleteGroup(id: String?) { 
         val db = this.writableDatabase
-        db.delete(TABLE_GROUPS, "$COLUMN_GROUP_ID = ?", arrayOf(id.toString()))
+        db.delete(TABLE_GROUPS, "$COLUMN_GROUP_ID = ?", arrayOf(id))
     }
 
-    fun getGroupById(id: Long): com.securepass.vision.model.SecurityEventGroup? {
+    fun getGroupById(id: String): com.securepass.vision.model.SecurityEventGroup? {
         val db = this.readableDatabase
-        val cursor = db.query(TABLE_GROUPS, null, "$COLUMN_GROUP_ID = ?", arrayOf(id.toString()), null, null, null)
+        val cursor = db.query(TABLE_GROUPS, null, "$COLUMN_GROUP_ID = ?", arrayOf(id), null, null, null)
         var group: com.securepass.vision.model.SecurityEventGroup? = null
         if (cursor.moveToFirst()) {
             group = com.securepass.vision.model.SecurityEventGroup(
-                id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_GROUP_ID)),
+                id = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GROUP_ID)),
                 name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GROUP_NAME)),
                 location = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GROUP_LOCATION)),
                 prohibitedItems = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GROUP_PROHIBITED))
@@ -192,7 +189,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 username = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_USERNAME)),
                 password = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_PASSWORD)),
                 licenseKey = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_LICENSE)),
-                groupId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_USER_GROUP_ID)),
+                groupId = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_GROUP_ID)),
                 role = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_ROLE))
             )
         }
@@ -200,9 +197,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return user
     }
 
-    fun insertDetection(event: DetectionEvent): Long {
+    fun insertDetection(event: com.securepass.vision.model.DetectionEvent): Long {
         val db = this.writableDatabase
         val values = ContentValues().apply {
+            put(COLUMN_ID, event.id)
             put(COLUMN_LABEL, event.objectLabel)
             put(COLUMN_CONFIDENCE, event.confidence)
             put(COLUMN_TIMESTAMP, event.timestamp)
@@ -213,40 +211,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_DETECTION_EVENT_NAME, event.eventName)
         }
         return db.insert(TABLE_DETECTIONS, null, values)
-    }
-
-    fun getAllDetections(): List<DetectionEvent> {
-        val detections = mutableListOf<DetectionEvent>()
-        val db = this.readableDatabase
-        val cursor = db.query(
-            TABLE_DETECTIONS,
-            null,
-            null,
-            null,
-            null,
-            null,
-            "$COLUMN_TIMESTAMP DESC"
-        )
-
-        with(cursor) {
-            while (moveToNext()) {
-                detections.add(
-                    DetectionEvent(
-                        id = getLong(getColumnIndexOrThrow(COLUMN_ID)),
-                        objectLabel = getString(getColumnIndexOrThrow(COLUMN_LABEL)),
-                        confidence = getFloat(getColumnIndexOrThrow(COLUMN_CONFIDENCE)),
-                        timestamp = getLong(getColumnIndexOrThrow(COLUMN_TIMESTAMP)),
-                        alertLevel = getString(getColumnIndexOrThrow(COLUMN_ALERT_LEVEL)),
-                        userId = getString(getColumnIndexOrThrow(COLUMN_DETECTION_USER_ID)),
-                        userName = getString(getColumnIndexOrThrow(COLUMN_DETECTION_USER_NAME)),
-                        eventId = getLong(getColumnIndexOrThrow(COLUMN_DETECTION_EVENT_ID)),
-                        eventName = getString(getColumnIndexOrThrow(COLUMN_DETECTION_EVENT_NAME))
-                    )
-                )
-            }
-            close()
-        }
-        return detections
     }
 
     fun getDetectionsByUserId(userId: String): List<DetectionEvent> {
@@ -265,15 +229,15 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         with(cursor) {
             while (moveToNext()) {
                 detections.add(
-                    DetectionEvent(
-                        id = getLong(getColumnIndexOrThrow(COLUMN_ID)),
+                    com.securepass.vision.model.DetectionEvent(
+                        id = getString(getColumnIndexOrThrow(COLUMN_ID)),
                         objectLabel = getString(getColumnIndexOrThrow(COLUMN_LABEL)),
                         confidence = getFloat(getColumnIndexOrThrow(COLUMN_CONFIDENCE)),
                         timestamp = getLong(getColumnIndexOrThrow(COLUMN_TIMESTAMP)),
                         alertLevel = getString(getColumnIndexOrThrow(COLUMN_ALERT_LEVEL)),
                         userId = getString(getColumnIndexOrThrow(COLUMN_DETECTION_USER_ID)),
                         userName = getString(getColumnIndexOrThrow(COLUMN_DETECTION_USER_NAME)),
-                        eventId = getLong(getColumnIndexOrThrow(COLUMN_DETECTION_EVENT_ID)),
+                        eventId = getString(getColumnIndexOrThrow(COLUMN_DETECTION_EVENT_ID)),
                         eventName = getString(getColumnIndexOrThrow(COLUMN_DETECTION_EVENT_NAME))
                     )
                 )
@@ -283,9 +247,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return detections
     }
 
-    fun deleteDetection(id: Long) {
+    fun deleteDetection(id: String) {
         val db = this.writableDatabase
-        db.delete(TABLE_DETECTIONS, "$COLUMN_ID = ?", arrayOf(id.toString()))
+        db.delete(TABLE_DETECTIONS, "$COLUMN_ID = ?", arrayOf(id))
+    }
+
+    fun updateDetectionId(oldId: String, newId: String) {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ID, newId)
+        }
+        db.update(TABLE_DETECTIONS, values, "$COLUMN_ID = ?", arrayOf(oldId))
     }
 
     fun clearHistory() {
@@ -295,7 +267,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_NAME = "vigilante_ai.db"
-        private const val DATABASE_VERSION = 5 
+        private const val DATABASE_VERSION = 6
 
         const val TABLE_DETECTIONS = "detections"
         const val COLUMN_ID = "id"

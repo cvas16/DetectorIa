@@ -18,9 +18,9 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.securepass.vision.R
 import com.google.android.material.appbar.MaterialToolbar
-import java.util.ArrayList
 
 class ChooserActivity :
   AppCompatActivity(),
@@ -37,7 +37,7 @@ class ChooserActivity :
     supportActionBar?.title = "Vigilante AI"
 
     // Leer privilegios del usuario logueado
-    val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+    val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
     val isAdmin = sharedPref.getBoolean("IS_ADMIN", false)
     val userName = sharedPref.getString("CURRENT_USER_NAME", "Usuario")
     val userRole = sharedPref.getString("CURRENT_USER_ROLE", "Staff")
@@ -93,11 +93,8 @@ class ChooserActivity :
   }
 
   private fun logout() {
-    val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-    with(sharedPref.edit()) {
-      clear()
-      apply()
-    }
+    val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
+    sharedPref.edit { clear() }
     val intent = Intent(this, LoginActivity::class.java)
     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     startActivity(intent)
@@ -109,31 +106,21 @@ class ChooserActivity :
     startActivity(Intent(this, clicked))
   }
 
-  private fun getRequiredPermissions(): Array<String?> {
+  private fun getRequiredPermissions(): Array<String> {
     return try {
-      val info = this.packageManager.getPackageInfo(this.packageName, PackageManager.GET_PERMISSIONS)
-      info.requestedPermissions ?: arrayOfNulls(0)
-    } catch (e: Exception) {
-      arrayOfNulls(0)
+      val info = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+      info.requestedPermissions ?: emptyArray()
+    } catch (_: Exception) {
+      emptyArray()
     }
   }
 
   private fun allPermissionsGranted(): Boolean {
-    for (permission in getRequiredPermissions()) {
-      permission?.let {
-        if (!isPermissionGranted(this, it)) return false
-      }
-    }
-    return true
+    return getRequiredPermissions().all { isPermissionGranted(this, it) }
   }
 
   private fun getRuntimePermissions() {
-    val allNeededPermissions = ArrayList<String>()
-    for (permission in getRequiredPermissions()) {
-      permission?.let {
-        if (!isPermissionGranted(this, it)) allNeededPermissions.add(permission)
-      }
-    }
+    val allNeededPermissions = getRequiredPermissions().filter { !isPermissionGranted(this, it) }
 
     if (allNeededPermissions.isNotEmpty()) {
       ActivityCompat.requestPermissions(this, allNeededPermissions.toTypedArray(), PERMISSION_REQUESTS)
@@ -152,13 +139,10 @@ class ChooserActivity :
     private var descriptionIds: IntArray? = null
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-      var view = convertView
-      if (convertView == null) {
-        val inflater = ctx.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        view = inflater.inflate(android.R.layout.simple_list_item_2, null)
-      }
+      val view = convertView ?: (ctx.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater)
+        .inflate(android.R.layout.simple_list_item_2, parent, false)
 
-      val text1 = view!!.findViewById<TextView>(android.R.id.text1)
+      val text1 = view.findViewById<TextView>(android.R.id.text1)
       val text2 = view.findViewById<TextView>(android.R.id.text2)
 
       text1.text = classes[position].simpleName

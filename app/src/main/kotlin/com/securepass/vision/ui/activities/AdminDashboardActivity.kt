@@ -1,12 +1,12 @@
 package com.securepass.vision.ui.activities
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.card.MaterialCardView
 import com.securepass.vision.R
@@ -17,7 +17,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // Verificar si es Administrador
-        val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
         val isAdmin = sharedPref.getBoolean("IS_ADMIN", false)
         if (!isAdmin) {
             val intent = Intent(this, LoginActivity::class.java)
@@ -53,7 +53,7 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        findViewById<android.view.View>(R.id.btn_admin_logout).setOnClickListener {
+        findViewById<View>(R.id.btn_admin_logout).setOnClickListener {
             logout()
         }
     }
@@ -72,8 +72,8 @@ class AdminDashboardActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-        sharedPref.edit().clear().apply()
+        val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
+        sharedPref.edit { clear() }
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)

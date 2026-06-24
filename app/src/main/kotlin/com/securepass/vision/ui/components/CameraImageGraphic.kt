@@ -2,7 +2,6 @@ package com.securepass.vision.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import com.securepass.vision.ui.components.GraphicOverlay
 import com.securepass.vision.ui.components.GraphicOverlay.Graphic
 
 /** Dibuja la imagen de la cámara en el fondo. */

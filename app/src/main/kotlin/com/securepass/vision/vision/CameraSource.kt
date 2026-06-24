@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION", "PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+
 package com.securepass.vision.vision
 
 import android.Manifest
@@ -20,8 +22,11 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.ArrayList
 import java.util.IdentityHashMap
+import kotlin.math.abs
+import kotlin.math.ceil
 
-class CameraSource(protected var activity: Activity, private val graphicOverlay: GraphicOverlay) {
+@Suppress("DEPRECATION")
+class CameraSource(private var activity: Activity, private val graphicOverlay: GraphicOverlay) {
     private var camera: Camera? = null
     var cameraFacing = CAMERA_FACING_BACK
         private set
@@ -81,7 +86,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
         processingRunnable.setActive(false)
         try {
             processingThread?.join()
-        } catch (e: InterruptedException) {
+        } catch (_: InterruptedException) {
             Log.d(TAG, "Frame processing thread interrupted on release.")
         }
         processingThread = null
@@ -104,7 +109,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
     @Synchronized
     fun setFacing(facing: Int) {
         require(!(facing != CAMERA_FACING_BACK && facing != CAMERA_FACING_FRONT)) { "Invalid camera: $facing" }
-        this.cameraFacing = facing
+        cameraFacing = facing
     }
 
     @SuppressLint("InlinedApi")
@@ -115,20 +120,26 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
             throw IOException("Could not find requested camera.")
         }
         val camera = Camera.open(requestedCameraId)
-        var sizePair = PreferenceUtils.getCameraPreviewSizePair(activity, requestedCameraId)
-        if (sizePair == null) {
-            sizePair = selectSizePair(
+        val prefSizePair = PreferenceUtils.getCameraPreviewSizePair(activity, requestedCameraId)
+        val sizePair = if (prefSizePair != null) {
+            SizePair(
+                Size(prefSizePair.preview.width, prefSizePair.preview.height),
+                prefSizePair.picture?.let { Size(it.width, it.height) }
+            )
+        } else {
+            selectSizePair(
                 camera,
                 DEFAULT_REQUESTED_CAMERA_PREVIEW_WIDTH,
                 DEFAULT_REQUESTED_CAMERA_PREVIEW_HEIGHT
             )
         }
+
         if (sizePair == null) {
             throw IOException("Could not find suitable preview size.")
         }
         previewSize = sizePair.preview
         Log.v(TAG, "Camera preview size: $previewSize")
-        val previewFpsRange = selectPreviewFpsRange(camera, REQUESTED_FPS)
+        val previewFpsRange = selectPreviewFpsRange(camera)
             ?: throw IOException("Could not find suitable preview frames per second range.")
         val parameters = camera.parameters
         val pictureSize = sizePair.picture
@@ -192,7 +203,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
     private fun createPreviewBuffer(previewSize: Size): ByteArray {
         val bitsPerPixel = ImageFormat.getBitsPerPixel(IMAGE_FORMAT)
         val sizeInBits = previewSize.height.toLong() * previewSize.width * bitsPerPixel
-        val bufferSize = Math.ceil(sizeInBits / 8.0).toInt() + 1
+        val bufferSize = ceil(sizeInBits / 8.0).toInt() + 1
         val byteArray = ByteArray(bufferSize)
         val buffer = ByteBuffer.wrap(byteArray)
         check(!(!buffer.hasArray() || buffer.array() !== byteArray)) { "Failed to create valid buffer for camera source." }
@@ -201,6 +212,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
     }
 
     private inner class CameraPreviewCallback : Camera.PreviewCallback {
+        @Deprecated("Deprecated in Java")
         override fun onPreviewFrame(data: ByteArray, camera: Camera) {
             processingRunnable.setNextFrame(data, camera)
         }
@@ -222,7 +234,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
         fun setActive(active: Boolean) {
             synchronized(lock) {
                 this.active = active
-                (lock as Object).notifyAll()
+                (lock as java.lang.Object).notifyAll()
             }
         }
 
@@ -237,7 +249,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
                     return
                 }
                 pendingFrameData = bytesToByteBuffer[data]
-                (lock as Object).notifyAll()
+                (lock as java.lang.Object).notifyAll()
             }
         }
 
@@ -248,7 +260,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
                 synchronized(lock) {
                     while (active && pendingFrameData == null) {
                         try {
-                            (lock as Object).wait()
+                            (lock as java.lang.Object).wait()
                         } catch (e: InterruptedException) {
                             Log.d(TAG, "Frame processing loop terminated.", e)
                             return
@@ -328,7 +340,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
             var minDiff = Int.MAX_VALUE
             for (sizePair in validPreviewSizes) {
                 val size = sizePair.preview
-                val diff = Math.abs(size.width - desiredWidth) + Math.abs(size.height - desiredHeight)
+                val diff = abs(size.width - desiredWidth) + abs(size.height - desiredHeight)
                 if (diff < minDiff) {
                     selectedPair = sizePair
                     minDiff = diff
@@ -346,7 +358,7 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
                 val previewAspectRatio = previewSize.width.toFloat() / previewSize.height
                 for (pictureSize in supportedPictureSizes) {
                     val pictureAspectRatio = pictureSize.width.toFloat() / pictureSize.height
-                    if (Math.abs(previewAspectRatio - pictureAspectRatio) < ASPECT_RATIO_TOLERANCE) {
+                    if (abs(previewAspectRatio - pictureAspectRatio) < ASPECT_RATIO_TOLERANCE) {
                         validPreviewSizes.add(SizePair(previewSize, pictureSize))
                         break
                     }
@@ -362,14 +374,14 @@ class CameraSource(protected var activity: Activity, private val graphicOverlay:
         }
 
         @SuppressLint("InlinedApi")
-        private fun selectPreviewFpsRange(camera: Camera, desiredPreviewFps: Float): IntArray? {
-            val desiredPreviewFpsScaled = (desiredPreviewFps * 1000.0f).toInt()
+        private fun selectPreviewFpsRange(camera: Camera): IntArray? {
+            val desiredPreviewFpsScaled = (REQUESTED_FPS * 1000.0f).toInt()
             var selectedFpsRange: IntArray? = null
             var minUpperBoundDiff = Int.MAX_VALUE
             var minLowerBound = Int.MAX_VALUE
             val previewFpsRangeList = camera.parameters.supportedPreviewFpsRange
             for (range in previewFpsRangeList) {
-                val upperBoundDiff = Math.abs(desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX])
+                val upperBoundDiff = abs(desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX])
                 val lowerBound = range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX]
                 if (upperBoundDiff <= minUpperBoundDiff && lowerBound <= minLowerBound) {
                     selectedFpsRange = range

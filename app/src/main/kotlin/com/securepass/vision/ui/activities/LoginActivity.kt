@@ -1,16 +1,17 @@
 package com.securepass.vision.ui.activities
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
 import com.securepass.vision.R
-import com.securepass.vision.data.db.DatabaseHelper
-import androidx.lifecycle.lifecycleScope
 import com.securepass.vision.data.api.RetrofitClient
+import com.securepass.vision.data.db.DatabaseHelper
+import com.securepass.vision.model.User
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
@@ -21,7 +22,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // Verificar sesión existente completa antes de mostrar el login
-        val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
         if (sharedPref.contains("CURRENT_USER_ID")) {
             val isAdmin = sharedPref.getBoolean("IS_ADMIN", false)
             if (isAdmin) {
@@ -61,7 +62,7 @@ class LoginActivity : AppCompatActivity() {
                             return@launch
                         }
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Si falla la red, continuamos con la base de datos local
                 }
 
@@ -70,15 +71,15 @@ class LoginActivity : AppCompatActivity() {
                 if (user != null && user.password == password) {
                     saveSessionAndNavigate(user)
                 } else {
-                    // Fallback de seguridad: Admin por defecto (solo si no hay internet Y no está en DB)
+                    //  Admin por defecto
                     if (username == "admin" && password == "admin123") {
-                        val adminUser = com.securepass.vision.model.User(
+                        val adminUser = User(
                             id = "admin-id",
                             name = "Administrador",
                             username = "admin",
                             password = "admin123",
                             licenseKey = "MASTER",
-                            groupId = 0,
+                            groupId = "0",
                             role = "admin"
                         )
                         saveSessionAndNavigate(adminUser)
@@ -90,18 +91,17 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveSessionAndNavigate(user: com.securepass.vision.model.User) {
+    private fun saveSessionAndNavigate(user: User) {
         // Sincronización inmediata: Guardar el usuario que acaba de loguearse en la DB local
         dbHelper.insertUser(user)
 
-        val sharedPref = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-        with(sharedPref.edit()) {
+        val sharedPref = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
+        sharedPref.edit {
             putBoolean("IS_ADMIN", user.role == "admin")
             putString("CURRENT_USER_ID", user.id)
             putString("CURRENT_USER_NAME", user.name)
-            putLong("CURRENT_GROUP_ID", user.groupId)
+            putString("CURRENT_GROUP_ID", user.groupId)
             putString("CURRENT_USER_ROLE", user.role)
-            apply()
         }
         if (user.role == "admin") {
             navigateToAdminDashboard()

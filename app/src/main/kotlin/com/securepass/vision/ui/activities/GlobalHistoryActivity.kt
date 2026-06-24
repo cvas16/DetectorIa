@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
-import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -21,7 +20,6 @@ class GlobalHistoryActivity : AppCompatActivity() {
     private lateinit var adapter: HistoryAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: View
-    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,7 +28,7 @@ class GlobalHistoryActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.history_toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Historial Global (Nube)"
+        supportActionBar?.title = "Historial Global"
 
         recyclerView = findViewById(R.id.history_recycler_view)
         emptyState = findViewById(R.id.empty_state_container)
@@ -46,7 +44,7 @@ class GlobalHistoryActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = HistoryAdapter(
             events = emptyList(),
-            onItemClick = { event ->
+            onItemClick = { _ ->
                 // Opcional: ver detalles o ampliar imagen si existiera
             },
             onDeleteClick = { event ->
@@ -62,7 +60,7 @@ class GlobalHistoryActivity : AppCompatActivity() {
             .setTitle("¿Eliminar de la nube?")
             .setMessage("Esta acción eliminará el registro permanentemente de la base de datos global.")
             .setPositiveButton("Eliminar") { _, _ ->
-                deleteEventFromCloud(event.id.toString())
+                event.id?.let { deleteEventFromCloud(it) }
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -78,7 +76,7 @@ class GlobalHistoryActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this@GlobalHistoryActivity, "No se pudo eliminar de la nube", Toast.LENGTH_SHORT).show()
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(this@GlobalHistoryActivity, "Error de conexión al eliminar", Toast.LENGTH_SHORT).show()
             }
         }

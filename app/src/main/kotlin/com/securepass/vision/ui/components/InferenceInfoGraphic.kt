@@ -3,7 +3,6 @@ package com.securepass.vision.ui.components
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import com.securepass.vision.ui.components.GraphicOverlay
 
 /** Instancia gráfica para renderizar información de inferencia (latencia, FPS, resolución) en una vista de superposición. */
 class InferenceInfoGraphic(

@@ -3,24 +3,12 @@ package com.securepass.vision.vision
 import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.Build.VERSION_CODES
 import android.os.SystemClock
-import androidx.annotation.RequiresApi
-import android.util.Log
-import android.widget.Toast
 import androidx.annotation.GuardedBy
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
-import com.google.android.gms.tasks.OnFailureListener
-import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskExecutors
-import com.google.android.gms.tasks.Tasks
-import com.google.android.odml.image.BitmapMlImageBuilder
-import com.google.android.odml.image.ByteBufferMlImageBuilder
-import com.google.android.odml.image.MediaMlImageBuilder
-import com.google.android.odml.image.MlImage
-import com.google.mlkit.common.MlKitException
 import com.google.mlkit.vision.common.InputImage
 import com.securepass.vision.utils.PreferenceUtils
 import com.securepass.vision.utils.BitmapUtils
@@ -28,9 +16,8 @@ import com.securepass.vision.model.FrameMetadata
 import com.securepass.vision.ui.components.GraphicOverlay
 import com.securepass.vision.ui.components.CameraImageGraphic
 import com.securepass.vision.ui.components.InferenceInfoGraphic
-import com.securepass.vision.vision.ScopedExecutor
-import java.lang.Math.max
-import java.lang.Math.min
+import kotlin.math.max
+import kotlin.math.min
 import java.nio.ByteBuffer
 import java.util.Timer
 import java.util.TimerTask
@@ -40,11 +27,6 @@ import java.util.concurrent.Executor
  * Clase base abstracta para los procesadores de visión de ML Kit.
  */
 abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
-
-  companion object {
-    const val MANUAL_TESTING_LOG = "LogTagForTest"
-    private const val TAG = "VisionProcessorBase"
-  }
 
   private var activityManager: ActivityManager =
     context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -70,7 +52,7 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
   @GuardedBy("this") private var processingMetaData: FrameMetadata? = null
 
   init {
-    fpsTimer.scheduleAtFixedRate(
+    fpsTimer.schedule(
       object : TimerTask() {
         override fun run() {
           framesPerSecond = frameProcessedInOneSecondInterval
@@ -88,8 +70,8 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
     graphicOverlay: GraphicOverlay
   ) {
     synchronized(this) {
-        latestImage = data
-        latestImageMetaData = frameMetadata
+      latestImage = data
+      latestImageMetaData = frameMetadata
     }
     if (processingImage == null && processingMetaData == null) {
       processLatestImage(graphicOverlay)
@@ -127,13 +109,11 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
       ),
       graphicOverlay,
       bitmap,
-      /* shouldShowFps= */ true,
       frameStartMs
     )
       .addOnSuccessListener(executor) { processLatestImage(graphicOverlay) }
   }
 
-  @RequiresApi(VERSION_CODES.KITKAT)
   @ExperimentalGetImage
   override fun processImageProxy(image: ImageProxy, graphicOverlay: GraphicOverlay) {
     val frameStartMs = SystemClock.elapsedRealtime()
@@ -148,8 +128,7 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
     requestDetectInImage(
       InputImage.fromMediaImage(image.image!!, image.imageInfo.rotationDegrees),
       graphicOverlay,
-      /* originalCameraImage= */ bitmap,
-      /* shouldShowFps= */ true,
+      bitmap,
       frameStartMs
     )
       .addOnCompleteListener { image.close() }
@@ -159,14 +138,12 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
     image: InputImage,
     graphicOverlay: GraphicOverlay,
     originalCameraImage: Bitmap?,
-    shouldShowFps: Boolean,
     frameStartMs: Long
   ): Task<T> {
     return setUpListener(
       detectInImage(image),
       graphicOverlay,
       originalCameraImage,
-      shouldShowFps,
       frameStartMs
     )
   }
@@ -175,59 +152,52 @@ abstract class VisionProcessorBase<T>(context: Context) : VisionImageProcessor {
     task: Task<T>,
     graphicOverlay: GraphicOverlay,
     originalCameraImage: Bitmap?,
-    shouldShowFps: Boolean,
     frameStartMs: Long
   ): Task<T> {
     val detectorStartMs = SystemClock.elapsedRealtime()
     return task
-      .addOnSuccessListener(
-        executor as Executor,
-        OnSuccessListener { results: T ->
-          val endMs = SystemClock.elapsedRealtime()
-          val currentFrameLatencyMs = endMs - frameStartMs
-          val currentDetectorLatencyMs = endMs - detectorStartMs
-          if (numRuns >= 500) {
-            resetLatencyStats()
-          }
-          numRuns++
-          frameProcessedInOneSecondInterval++
-          totalFrameMs += currentFrameLatencyMs
-          maxFrameMs = max(currentFrameLatencyMs, maxFrameMs)
-          minFrameMs = min(currentFrameLatencyMs, minFrameMs)
-          totalDetectorMs += currentDetectorLatencyMs
-          maxDetectorMs = max(currentDetectorLatencyMs, maxDetectorMs)
-          minDetectorMs = min(currentDetectorLatencyMs, minDetectorMs)
+      .addOnSuccessListener(executor as Executor) { results: T ->
+        val endMs = SystemClock.elapsedRealtime()
+        val currentFrameLatencyMs = endMs - frameStartMs
+        val currentDetectorLatencyMs = endMs - detectorStartMs
+        if (numRuns >= 500) {
+          resetLatencyStats()
+        }
+        numRuns++
+        frameProcessedInOneSecondInterval++
+        totalFrameMs += currentFrameLatencyMs
+        maxFrameMs = max(currentFrameLatencyMs, maxFrameMs)
+        minFrameMs = min(currentFrameLatencyMs, minFrameMs)
+        totalDetectorMs += currentDetectorLatencyMs
+        maxDetectorMs = max(currentDetectorLatencyMs, maxDetectorMs)
+        minDetectorMs = min(currentDetectorLatencyMs, minDetectorMs)
 
-          if (frameProcessedInOneSecondInterval == 1) {
-            val mi = ActivityManager.MemoryInfo()
-            activityManager.getMemoryInfo(mi)
-          }
-          graphicOverlay.clear()
-          if (originalCameraImage != null) {
-            graphicOverlay.add(CameraImageGraphic(graphicOverlay, originalCameraImage))
-          }
-          this@VisionProcessorBase.onSuccess(results, graphicOverlay)
-          if (!PreferenceUtils.shouldHideDetectionInfo(graphicOverlay.context)) {
-            graphicOverlay.add(
-              InferenceInfoGraphic(
-                graphicOverlay,
-                currentFrameLatencyMs,
-                currentDetectorLatencyMs,
-                if (shouldShowFps) framesPerSecond else null
-              )
+        if (frameProcessedInOneSecondInterval == 1) {
+          val mi = ActivityManager.MemoryInfo()
+          activityManager.getMemoryInfo(mi)
+        }
+        graphicOverlay.clear()
+        if (originalCameraImage != null) {
+          graphicOverlay.add(CameraImageGraphic(graphicOverlay, originalCameraImage))
+        }
+        onSuccess(results, graphicOverlay)
+        if (!PreferenceUtils.shouldHideDetectionInfo(graphicOverlay.context)) {
+          graphicOverlay.add(
+            InferenceInfoGraphic(
+              graphicOverlay,
+              currentFrameLatencyMs,
+              currentDetectorLatencyMs,
+              framesPerSecond
             )
-          }
-          graphicOverlay.postInvalidate()
+          )
         }
-      )
-      .addOnFailureListener(
-        executor as Executor,
-        OnFailureListener { e: Exception ->
-          graphicOverlay.clear()
-          graphicOverlay.postInvalidate()
-          this@VisionProcessorBase.onFailure(e)
-        }
-      )
+        graphicOverlay.postInvalidate()
+      }
+      .addOnFailureListener(executor as Executor) { e: Exception ->
+        graphicOverlay.clear()
+        graphicOverlay.postInvalidate()
+        onFailure(e)
+      }
   }
 
   override fun stop() {

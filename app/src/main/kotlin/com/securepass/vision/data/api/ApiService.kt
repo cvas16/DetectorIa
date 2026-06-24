@@ -25,4 +25,16 @@ interface ApiService {
 
     @DELETE("detecciones/{id}")
     suspend fun deleteDetection(@Path("id") id: String): Response<Unit>
+
+    @GET("eventos")
+    suspend fun getAllGroups(): Response<List<com.securepass.vision.model.SecurityEventGroup>>
+
+    @POST("eventos")
+    suspend fun createGroup(@Body event: com.securepass.vision.model.SecurityEventGroup): Response<com.securepass.vision.model.SecurityEventGroup>
+
+    @PUT("eventos/{id}")
+    suspend fun updateGroup(@Path("id") id: String, @Body event: com.securepass.vision.model.SecurityEventGroup): Response<com.securepass.vision.model.SecurityEventGroup>
+
+    @DELETE("eventos/{id}")
+    suspend fun deleteGroup(@Path("id") id: String): Response<Unit>
 }

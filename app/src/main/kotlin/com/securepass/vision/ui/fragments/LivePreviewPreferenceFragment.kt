@@ -1,28 +1,34 @@
+@file:Suppress("DEPRECATION")
 package com.securepass.vision.ui.fragments
 
 import android.hardware.Camera
 import android.os.Bundle
-import android.preference.ListPreference
-import android.preference.PreferenceCategory
-import android.preference.PreferenceFragment
 import androidx.annotation.StringRes
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
 import com.securepass.vision.vision.CameraSource
 import com.securepass.vision.R
 import com.securepass.vision.utils.PreferenceUtils
 
 /** Configura los ajustes para la actividad de vista previa en vivo. */
-open class LivePreviewPreferenceFragment : PreferenceFragment() {
+open class LivePreviewPreferenceFragment : PreferenceFragmentCompat() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        addPreferencesFromResource(R.xml.preference_live_preview_quickstart)
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.preference_live_preview_quickstart, rootKey)
         setUpCameraPreferences()
     }
 
     open fun setUpCameraPreferences() {
-        val cameraPreference = findPreference(getString(R.string.pref_category_key_camera)) as PreferenceCategory
-        cameraPreference.removePreference(findPreference(getString(R.string.pref_key_camerax_rear_camera_target_resolution)))
-        cameraPreference.removePreference(findPreference(getString(R.string.pref_key_camerax_front_camera_target_resolution)))
+        val cameraPreference = findPreference<PreferenceCategory>(getString(R.string.pref_category_key_camera))
+        
+        findPreference<Preference>(getString(R.string.pref_key_camerax_rear_camera_target_resolution))?.let {
+            cameraPreference?.removePreference(it)
+        }
+        findPreference<Preference>(getString(R.string.pref_key_camerax_front_camera_target_resolution))?.let {
+            cameraPreference?.removePreference(it)
+        }
 
         setUpCameraPreviewSizePreference(
             R.string.pref_key_rear_camera_preview_size,
@@ -41,7 +47,8 @@ open class LivePreviewPreferenceFragment : PreferenceFragment() {
         @StringRes pictureSizePrefKeyId: Int,
         cameraId: Int
     ) {
-        val previewSizePreference = findPreference(getString(previewSizePrefKeyId)) as ListPreference
+        val previewSizePreference = findPreference<ListPreference>(getString(previewSizePrefKeyId)) ?: return
+
         var camera: Camera? = null
         try {
             camera = Camera.open(cameraId)
@@ -69,7 +76,7 @@ open class LivePreviewPreferenceFragment : PreferenceFragment() {
                 previewSizePreference.value = previewSizeString
                 previewSizePreference.summary = previewSizeString
                 PreferenceUtils.saveString(
-                    activity,
+                    requireContext(),
                     pictureSizePrefKeyId,
                     sizePair?.picture?.toString()
                 )
@@ -81,16 +88,16 @@ open class LivePreviewPreferenceFragment : PreferenceFragment() {
                 val newPreviewSizeStringValue = newValue as String
                 previewSizePreference.summary = newPreviewSizeStringValue
                 PreferenceUtils.saveString(
-                    activity,
+                    requireContext(),
                     pictureSizePrefKeyId,
                     previewToPictureSizeStringMap[newPreviewSizeStringValue]
                 )
                 true
             }
-        } catch (e: RuntimeException) {
+        } catch (_: RuntimeException) {
             // Si no hay cámara para el ID dado, ocultar la preferencia correspondiente.
-            (findPreference(getString(R.string.pref_category_key_camera)) as PreferenceCategory)
-                .removePreference(previewSizePreference)
+            val category = findPreference<PreferenceCategory>(getString(R.string.pref_category_key_camera))
+            category?.removePreference(previewSizePreference)
         } finally {
             camera?.release()
         }

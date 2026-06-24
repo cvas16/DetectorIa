@@ -8,7 +8,6 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
@@ -76,9 +75,12 @@ object BitmapUtils {
         return rotatedBitmap
     }
 
+    @Suppress("unused")
     @Throws(IOException::class)
     fun getBitmapFromContentUri(contentResolver: ContentResolver, imageUri: Uri): Bitmap? {
-        val decodedBitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri) ?: return null
+        val decodedBitmap = contentResolver.openInputStream(imageUri)?.use { inputStream ->
+            BitmapFactory.decodeStream(inputStream)
+        } ?: return null
         val orientation = getExifOrientationTag(contentResolver, imageUri)
         var rotationDegrees = 0
         var flipX = false
@@ -174,9 +176,9 @@ object BitmapUtils {
 
         var outputPos = offset
         var rowStart = 0
-        for (row in 0 until numRow) {
+        repeat(numRow) {
             var inputPos = rowStart
-            for (col in 0 until numCol) {
+            repeat(numCol) {
                 out[outputPos] = buffer.get(inputPos)
                 outputPos += pixelStride
                 inputPos += plane.pixelStride

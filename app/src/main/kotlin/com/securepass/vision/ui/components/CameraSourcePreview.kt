@@ -10,6 +10,8 @@ import android.view.ViewGroup
 import com.securepass.vision.utils.PreferenceUtils
 import com.securepass.vision.vision.CameraSource
 import java.io.IOException
+import kotlin.math.max
+import kotlin.math.min
 
 class CameraSourcePreview(context: Context, attrs: AttributeSet?) : ViewGroup(context, attrs) {
     private val surfaceView: SurfaceView = SurfaceView(context)
@@ -42,11 +44,6 @@ class CameraSourcePreview(context: Context, attrs: AttributeSet?) : ViewGroup(co
         cameraSource?.stop()
     }
 
-    fun release() {
-        cameraSource?.release()
-        cameraSource = null
-        surfaceView.holder.surface.release()
-    }
 
     @Throws(IOException::class, SecurityException::class)
     private fun startIfReady() {
@@ -60,15 +57,15 @@ class CameraSourcePreview(context: Context, attrs: AttributeSet?) : ViewGroup(co
 
             overlay?.let { overlay ->
                 cameraSource?.previewSize?.let { size ->
-                    val min = Math.min(size.width, size.height)
-                    val max = Math.max(size.width, size.height)
+                    val minSize = min(size.width, size.height)
+                    val maxSize = max(size.width, size.height)
                     val isImageFlipped = cameraSource?.cameraFacing == CameraSource.CAMERA_FACING_FRONT
                     if (isPortraitMode) {
                         // Swap width and height sizes when in portrait, since it will be rotated by 90 degrees.
                         // The camera preview and the image being processed have the same size.
-                        overlay.setImageSourceInfo(min, max, isImageFlipped)
+                        overlay.setImageSourceInfo(minSize, maxSize, isImageFlipped)
                     } else {
-                        overlay.setImageSourceInfo(max, min, isImageFlipped)
+                        overlay.setImageSourceInfo(maxSize, minSize, isImageFlipped)
                     }
                     overlay.clear()
                 }

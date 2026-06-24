@@ -25,8 +25,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.gms.common.annotation.KeepName
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.common.model.LocalModel
 import com.securepass.vision.R
@@ -36,10 +36,9 @@ import com.securepass.vision.viewmodel.CameraXViewModel
 import com.securepass.vision.vision.ObjectDetectorProcessor
 import com.securepass.vision.vision.VisionImageProcessor
 import com.securepass.vision.utils.PreferenceUtils
-import com.securepass.vision.ui.activities.SettingsActivity
 import com.securepass.vision.ui.activities.SettingsActivity.LaunchSource
+import com.google.android.material.appbar.MaterialToolbar
 
-@KeepName
 class CameraXLivePreviewActivity :
   AppCompatActivity(),
   ActivityCompat.OnRequestPermissionsResultCallback,
@@ -67,7 +66,7 @@ class CameraXLivePreviewActivity :
     cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
     setContentView(R.layout.activity_vision_camerax_live_preview)
 
-    val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.camera_toolbar)
+    val toolbar = findViewById<MaterialToolbar>(R.id.camera_toolbar)
     setSupportActionBar(toolbar)
     supportActionBar?.title = "Vigilante AI"
 
@@ -143,7 +142,7 @@ class CameraXLivePreviewActivity :
         bindAllCameraUseCases()
         return
       }
-    } catch (e: CameraInfoUnavailableException) {
+    } catch (_: CameraInfoUnavailableException) {
       // Falls through
     }
     Toast.makeText(
@@ -210,15 +209,15 @@ class CameraXLivePreviewActivity :
             .build()
           val securityOptions = PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, securityModel)
 
-          // 1. Obtener el grupo asignado al usuario desde SharedPreferences
-          val authPrefs = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-          val groupId = authPrefs.getLong("CURRENT_GROUP_ID", -1L)
+          // Obtener el grupo asignado al usuario desde SharedPreferences
+          val authPrefs = getSharedPreferences("AUTH_PREFS", MODE_PRIVATE)
+          val groupId = authPrefs.getString("CURRENT_GROUP_ID", "-1") ?: "-1"
 
-          // 2. Buscar las reglas del evento en la DB
+          // Buscar las reglas del evento en la DB
           val dbHelper = DatabaseHelper(this)
           val group = dbHelper.getGroupById(groupId)
 
-          // 3. Usar los objetos del evento o unos por defecto si no hay evento
+          //  Usar los objetos del evento o unos por defecto si no hay evento
           val prohibitedStr = group?.prohibitedItems ?: "Knife,Weapon"
           val prohibitedList = prohibitedStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
@@ -239,11 +238,11 @@ class CameraXLivePreviewActivity :
         }
         else -> throw IllegalStateException("Invalid model name")
       }
-    } catch (e: Exception) {
-      Log.e(TAG, "Can not create image processor: $selectedModel", e)
+    } catch (_: Exception) {
+      Log.e(TAG, "Can not create image processor: $selectedModel")
       Toast.makeText(
         applicationContext,
-        "Can not create image processor: ${e.localizedMessage}",
+        "Can not create image processor",
         Toast.LENGTH_LONG
       ).show()
       return
@@ -273,9 +272,8 @@ class CameraXLivePreviewActivity :
       }
       try {
         imageProcessor!!.processImageProxy(imageProxy, graphicOverlay!!)
-      } catch (e: MlKitException) {
-        Log.e(TAG, "Failed to process image. Error: ${e.localizedMessage}")
-        Toast.makeText(applicationContext, e.localizedMessage, Toast.LENGTH_SHORT).show()
+      } catch (_: MlKitException) {
+        Log.e(TAG, "Failed to process image.")
       }
     }
     cameraProvider!!.bindToLifecycle(this, cameraSelector!!, analysisUseCase)
@@ -283,7 +281,7 @@ class CameraXLivePreviewActivity :
 
   private fun showSecurityConfigDialog() {
     val editText = EditText(this)
-    val currentProhibited = getSharedPreferences("security_prefs", Context.MODE_PRIVATE)
+    val currentProhibited = getSharedPreferences("security_prefs", MODE_PRIVATE)
       .getString("prohibited_objects", "Knife,Weapon")
     editText.setText(currentProhibited)
     editText.hint = "Ej: Knife, Bottle, Chair"
@@ -294,10 +292,9 @@ class CameraXLivePreviewActivity :
       .setView(editText)
       .setPositiveButton("Guardar") { _, _ ->
         val input = editText.text.toString()
-        getSharedPreferences("security_prefs", Context.MODE_PRIVATE)
-          .edit()
-          .putString("prohibited_objects", input)
-          .apply()
+        getSharedPreferences("security_prefs", MODE_PRIVATE).edit {
+          putString("prohibited_objects", input)
+        }
         bindAnalysisUseCase()
       }
       .setNegativeButton("Cancelar", null)
@@ -306,41 +303,22 @@ class CameraXLivePreviewActivity :
 
   private fun getRequiredPermissions(): Array<String> {
     return try {
-      val info = this.packageManager
-        .getPackageInfo(this.packageName, PackageManager.GET_PERMISSIONS)
-      val ps = info.requestedPermissions
-      if (ps != null && ps.isNotEmpty()) {
-        ps
-      } else {
-        emptyArray()
-      }
-    } catch (e: Exception) {
+      val info = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+      info.requestedPermissions ?: emptyArray()
+    } catch (_: Exception) {
       emptyArray()
     }
   }
 
   private fun allPermissionsGranted(): Boolean {
-    for (permission in getRequiredPermissions()) {
-      if (!isPermissionGranted(this, permission)) {
-        return false
-      }
-    }
-    return true
+    return getRequiredPermissions().all { isPermissionGranted(this, it) }
   }
 
   private fun runtimePermissions() {
-    val allNeededPermissions = mutableListOf<String>()
-    for (permission in getRequiredPermissions()) {
-      if (!isPermissionGranted(this, permission)) {
-        allNeededPermissions.add(permission)
-      }
-    }
+    val allNeededPermissions = getRequiredPermissions().filter { !isPermissionGranted(this, it) }
+
     if (allNeededPermissions.isNotEmpty()) {
-      ActivityCompat.requestPermissions(
-        this,
-        allNeededPermissions.toTypedArray(),
-        PERMISSION_REQUESTS
-      )
+      ActivityCompat.requestPermissions(this, allNeededPermissions.toTypedArray(), PERMISSION_REQUESTS)
     }
   }
 

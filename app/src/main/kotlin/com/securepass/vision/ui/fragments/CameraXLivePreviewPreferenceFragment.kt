@@ -5,23 +5,26 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
-import android.os.Build
-import android.preference.ListPreference
-import android.preference.PreferenceCategory
-import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.camera.core.CameraSelector
+import androidx.preference.ListPreference
+import androidx.preference.PreferenceCategory
 import com.securepass.vision.R
 import com.securepass.vision.utils.PreferenceUtils
+import android.util.Log
 
 /** Configura los ajustes para la actividad de vista previa en vivo de CameraX. */
 class CameraXLivePreviewPreferenceFragment : LivePreviewPreferenceFragment() {
 
     override fun setUpCameraPreferences() {
-        val cameraPreference = findPreference(getString(R.string.pref_category_key_camera)) as PreferenceCategory
+        val cameraPreference = findPreference<PreferenceCategory>(getString(R.string.pref_category_key_camera))
 
-        cameraPreference.removePreference(findPreference(getString(R.string.pref_key_rear_camera_preview_size)))
-        cameraPreference.removePreference(findPreference(getString(R.string.pref_key_front_camera_preview_size)))
+        findPreference<ListPreference>(getString(R.string.pref_key_rear_camera_preview_size))?.let {
+            cameraPreference?.removePreference(it)
+        }
+        findPreference<ListPreference>(getString(R.string.pref_key_front_camera_preview_size))?.let {
+            cameraPreference?.removePreference(it)
+        }
 
         setUpCameraXTargetAnalysisSizePreference(
             R.string.pref_key_camerax_rear_camera_target_resolution,
@@ -37,8 +40,11 @@ class CameraXLivePreviewPreferenceFragment : LivePreviewPreferenceFragment() {
         @StringRes previewSizePrefKeyId: Int,
         lensFacing: Int
     ) {
-        val pref = findPreference(getString(previewSizePrefKeyId)) as ListPreference
-        val cameraCharacteristics = getCameraCharacteristics(activity, lensFacing)
+        val pref = findPreference<ListPreference>(getString(previewSizePrefKeyId))
+            ?: return
+
+
+        val cameraCharacteristics = getCameraCharacteristics(requireContext(), lensFacing)
         val entries: Array<String> = if (cameraCharacteristics != null) {
             val map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             val outputSizes = map?.getOutputSizes(SurfaceTexture::class.java)
@@ -66,12 +72,14 @@ class CameraXLivePreviewPreferenceFragment : LivePreviewPreferenceFragment() {
         pref.setOnPreferenceChangeListener { _, newValue ->
             val newStringValue = newValue as String
             pref.summary = newStringValue
-            PreferenceUtils.saveString(activity, previewSizePrefKeyId, newStringValue)
+            PreferenceUtils.saveString(requireContext(), previewSizePrefKeyId, newStringValue)
             true
         }
     }
 
     companion object {
+        private const val TAG = "CameraXLivePreviewPref"
+
         fun getCameraCharacteristics(context: Context, lensFacing: Int?): CameraCharacteristics? {
             val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
             try {
@@ -79,15 +87,13 @@ class CameraXLivePreviewPreferenceFragment : LivePreviewPreferenceFragment() {
                 for (availableCameraId in cameraList) {
                     val availableCameraCharacteristics = cameraManager.getCameraCharacteristics(availableCameraId)
                     val availableLensFacing = availableCameraCharacteristics.get(CameraCharacteristics.LENS_FACING)
-                    if (availableLensFacing == null) {
-                        continue
-                    }
+                        ?: continue
                     if (availableLensFacing == lensFacing) {
                         return availableCameraCharacteristics
                     }
                 }
             } catch (e: CameraAccessException) {
-                // Error al acceder a la información del ID de la cámara
+                Log.e(TAG, "Error al acceder a la información del ID de la cámara", e)
             }
             return null
         }

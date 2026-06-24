@@ -26,7 +26,7 @@ class ObjectDetectorProcessor(
   private val prohibitedLabels: List<String> = emptyList(),
   private val currentUserId: String = "0",
   private val currentUserName: String = "Unknown",
-  private val currentEventId: Long = -1L,
+  private val currentEventId: String = "0",
   private val currentEventName: String = "No Event"
 ) : VisionProcessorBase<List<DetectedObject>>(context) {
 
@@ -34,16 +34,16 @@ class ObjectDetectorProcessor(
   private val dbHelper = DatabaseHelper(context)
   private val lastSavedTime = mutableMapOf<String, Long>()
   
-  // Coroutine scope for background tasks
+  // Ámbito de corrutinas para tareas en segundo plano
   private val processorScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
   override fun stop() {
     super.stop()
-    processorScope.cancel() // Cancel all pending background tasks
+    processorScope.cancel() // Cancelar todas las tareas en segundo plano pendientes
     try {
       detector.close()
     } catch (e: IOException) {
-      Log.e(TAG, "Exception thrown while trying to close object detector!", e)
+      Log.e(TAG, "Excepción lanzada al intentar cerrar el detector de objetos!", e)
     }
   }
 
@@ -55,7 +55,7 @@ class ObjectDetectorProcessor(
     for (result in results) {
       graphicOverlay.add(ObjectGraphic(graphicOverlay, result, prohibitedLabels))
       
-      // Check labels for prohibited items
+      // Verificar etiquetas para elementos prohibidos
       for (label in result.labels) {
         if (prohibitedLabels.any { it.trim().equals(label.text, ignoreCase = true) }) {
           saveDetectionIfNew(label.text, label.confidence)
@@ -68,10 +68,12 @@ class ObjectDetectorProcessor(
     val currentTime = System.currentTimeMillis()
     val lastTime = lastSavedTime[label] ?: 0L
     
+    // Solo guardar si han pasado más de 5 segundos para evitar duplicados
     if (currentTime - lastTime > 5000) {
       lastSavedTime[label] = currentTime
       
       val detection = DetectionEvent(
+        id = java.util.UUID.randomUUID().toString(),
         objectLabel = "⚠️ $label",
         confidence = confidence,
         timestamp = currentTime,
@@ -81,15 +83,15 @@ class ObjectDetectorProcessor(
         eventName = currentEventName
       )
 
-      // Launch coroutine to handle DB and Cloud sync
+      // Iniciar corrutina para manejar la base de datos y la sincronización en la nube
       processorScope.launch {
-        // Save to Local DB (IO Thread)
+        // Guardar en la DB Local (Hilo de Entrada/Salida - IO)
         withContext(Dispatchers.IO) {
           dbHelper.insertDetection(detection)
           Log.d(TAG, "Alerta guardada en SQLite: $label")
         }
         
-        // Sync to Cloud (IO Thread)
+        // Sincronizar con la nube
         uploadDetectionToCloud(detection)
       }
     }
@@ -99,13 +101,17 @@ class ObjectDetectorProcessor(
     val apiService = com.securepass.vision.data.api.RetrofitClient.instance
     
     try {
-      // Retrofit suspend functions handle switching to IO internally if using proper call adapter,
-      // but wrapping in withContext(Dispatchers.IO) ensures safety.
       val response = withContext(Dispatchers.IO) {
         apiService.postDetection(detection)
       }
       
       if (response.isSuccessful) {
+        val cloudDetection = response.body()
+        if (cloudDetection != null && detection.id != null) {
+          withContext(Dispatchers.IO) {
+            dbHelper.updateDetectionId(detection.id, cloudDetection.id!!)
+          }
+        }
         Log.d(TAG, "Detección sincronizada con la nube: ${detection.objectLabel}")
       } else {
         Log.e(TAG, "Error al sincronizar detección: ${response.code()}")
@@ -116,7 +122,7 @@ class ObjectDetectorProcessor(
   }
 
   override fun onFailure(e: Exception) {
-    Log.e(TAG, "Object detection failed!", e)
+    Log.e(TAG, "Fallo en la detección de objetos!", e)
   }
 
   companion object {

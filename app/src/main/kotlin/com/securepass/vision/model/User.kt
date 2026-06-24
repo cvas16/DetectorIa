@@ -6,6 +6,6 @@ data class User(
     val username: String,
     val password: String,
     val licenseKey: String,
-    val groupId: Long = 0,
+    val groupId: String = "0",
     val role: String = "staff"
 )

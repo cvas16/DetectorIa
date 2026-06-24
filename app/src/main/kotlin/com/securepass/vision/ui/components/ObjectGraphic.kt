@@ -1,26 +1,9 @@
-/*
- * Copyright 2020 Google LLC. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.securepass.vision.ui.components
 
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import com.securepass.vision.ui.components.GraphicOverlay
 import com.securepass.vision.ui.components.GraphicOverlay.Graphic
 import com.google.mlkit.vision.objects.DetectedObject
 import java.util.Locale
@@ -28,8 +11,8 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-/** Draw the detected object info in preview.  */
-class ObjectGraphic constructor(
+/** Dibuja la información del objeto detectado en la vista previa. */
+class ObjectGraphic(
   overlay: GraphicOverlay,
   private val detectedObject: DetectedObject,
   private val prohibitedLabels: List<String> = emptyList()
@@ -57,7 +40,7 @@ class ObjectGraphic constructor(
   }
 
   override fun draw(canvas: Canvas) {
-    // 1. SECURITY LOGIC: Determine if the object is prohibited
+    // Determinamos si el objeto está prohibido
     var isProhibited = false
     for (label in detectedObject.labels) {
       val labelText = label.text
@@ -67,15 +50,15 @@ class ObjectGraphic constructor(
       }
     }
 
-    // 2. DYNAMIC COLOR SELECTION: Force RED for prohibited
+    // Rojo para prohibidos
     var colorID: Int
     if (isProhibited) {
-      colorID = 3 // Index 3 is {White, Red}
+      colorID = 3 // El índice 3 es {Blanco, Rojo}
       boxPaints[colorID].strokeWidth = STROKE_WIDTH * 3.0f
     } else {
       colorID = if (detectedObject.trackingId == null) 0
       else abs(detectedObject.trackingId!! % NUM_COLORS)
-      if (colorID == 3) colorID = 0 // Reserve Red for alerts
+      if (colorID == 3) colorID = 0 // Reservar el Rojo para alertas
       boxPaints[colorID].strokeWidth = STROKE_WIDTH
     }
 
@@ -84,7 +67,7 @@ class ObjectGraphic constructor(
     val lineHeight = TEXT_SIZE + STROKE_WIDTH
     var yLabelOffset = -lineHeight
 
-    // Calculate width and height of label box
+    // Calcular el ancho y alto del cuadro de la etiqueta
     for (label in detectedObject.labels) {
       val labelText = if (isProhibited) "⚠️ PROHIBIDO: ${label.text}" else label.text
       textWidth = max(textWidth, textPaints[colorID].measureText(labelText))
@@ -102,7 +85,7 @@ class ObjectGraphic constructor(
       yLabelOffset -= 2 * lineHeight
     }
 
-    // Draws the bounding box.
+    // Dibuja el cuadro delimitador (Bounding Box).
     val rect = RectF(detectedObject.boundingBox)
     val x0 = translateX(rect.left)
     val x1 = translateX(rect.right)
@@ -112,7 +95,7 @@ class ObjectGraphic constructor(
     rect.bottom = translateY(rect.bottom)
     canvas.drawRect(rect, boxPaints[colorID])
 
-    // Draws other object info.
+    // Dibuja otra información del objeto (ID de rastreo y etiquetas).
     canvas.drawRect(
       rect.left - STROKE_WIDTH,
       rect.top + yLabelOffset,

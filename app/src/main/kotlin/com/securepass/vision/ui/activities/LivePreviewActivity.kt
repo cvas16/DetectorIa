@@ -1,23 +1,27 @@
 package com.securepass.vision.ui.activities
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.CompoundButton
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.Toast
 import android.widget.ToggleButton
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.google.android.gms.common.annotation.KeepName
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.mlkit.common.model.LocalModel
 import com.securepass.vision.R
 import com.securepass.vision.data.db.DatabaseHelper
@@ -26,7 +30,6 @@ import com.securepass.vision.ui.components.CameraSourcePreview
 import com.securepass.vision.ui.components.GraphicOverlay
 import com.securepass.vision.vision.ObjectDetectorProcessor
 import com.securepass.vision.utils.PreferenceUtils
-import com.securepass.vision.ui.activities.SettingsActivity
 import com.securepass.vision.ui.activities.SettingsActivity.LaunchSource
 import java.io.IOException
 import java.util.ArrayList
@@ -48,7 +51,7 @@ class LivePreviewActivity :
     Log.d(TAG, "onCreate")
     setContentView(R.layout.activity_vision_live_preview)
 
-    val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.camera_toolbar)
+    val toolbar = findViewById<MaterialToolbar>(R.id.camera_toolbar)
     setSupportActionBar(toolbar)
     supportActionBar?.title = "Vigilante AI"
 
@@ -63,7 +66,7 @@ class LivePreviewActivity :
     }
 
     val spinner = findViewById<Spinner>(R.id.spinner)
-    val options: MutableList<String> = ArrayList()
+    val options = ArrayList<String>()
     options.add(SECURITY_MODE)
 
     val dataAdapter = ArrayAdapter(this, R.layout.spinner_style, options)
@@ -79,7 +82,7 @@ class LivePreviewActivity :
       if (SECURITY_MODE == selectedModel) {
         showSecurityConfigDialog()
       } else {
-        val intent = Intent(applicationContext, SettingsActivity::class.java)
+        val intent = Intent(this, SettingsActivity::class.java)
         intent.putExtra(SettingsActivity.EXTRA_LAUNCH_SOURCE, LaunchSource.LIVE_PREVIEW)
         startActivity(intent)
       }
@@ -88,7 +91,7 @@ class LivePreviewActivity :
     if (allPermissionsGranted()) {
       createCameraSource(selectedModel)
     } else {
-      runtimePermissions
+      getRuntimePermissions()
     }
   }
 
@@ -101,7 +104,7 @@ class LivePreviewActivity :
       createCameraSource(selectedModel)
       startCameraSource()
     } else {
-      runtimePermissions
+      getRuntimePermissions()
     }
   }
 
@@ -132,15 +135,12 @@ class LivePreviewActivity :
           .build()
         val securityOptions = PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, securityModel)
         
-        // 1. Obtener el grupo asignado al usuario
         val authPrefs = getSharedPreferences("AUTH_PREFS", Context.MODE_PRIVATE)
-        val groupId = authPrefs.getLong("CURRENT_GROUP_ID", -1L)
+        val groupId = authPrefs.getString("CURRENT_GROUP_ID", "0") ?: "0"
 
-        // 2. Buscar las reglas en la DB
         val dbHelper = DatabaseHelper(this)
-        val group = dbHelper.getGroupById(groupId)
+        val group = if (groupId != "0") dbHelper.getGroupById(groupId) else null
 
-        // 3. Usar los objetos del evento
         val prohibitedStr = group?.prohibitedItems ?: "Knife,Weapon"
         val prohibitedList = prohibitedStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         
@@ -163,27 +163,26 @@ class LivePreviewActivity :
       }
     } catch (e: Exception) {
       Log.e(TAG, "Can not create image processor: $model", e)
-      Toast.makeText(applicationContext, "Can not create image processor: " + e.message, Toast.LENGTH_LONG).show()
+      Toast.makeText(this, "Can not create image processor: ${e.message}", Toast.LENGTH_LONG).show()
     }
   }
 
   private fun showSecurityConfigDialog() {
-    val editText = android.widget.EditText(this)
+    val editText = EditText(this)
     val currentProhibited = getSharedPreferences("security_prefs", Context.MODE_PRIVATE)
       .getString("prohibited_objects", "Knife,Weapon")
     editText.setText(currentProhibited)
     editText.hint = "Ej: Knife, Bottle, Chair"
 
-    android.app.AlertDialog.Builder(this)
+    AlertDialog.Builder(this)
       .setTitle("Configuración de Seguridad")
       .setMessage("Escriba los objetos a prohibir (separados por comas):")
       .setView(editText)
       .setPositiveButton("Guardar") { _, _ ->
         val input = editText.text.toString()
-        getSharedPreferences("security_prefs", Context.MODE_PRIVATE)
-          .edit()
-          .putString("prohibited_objects", input)
-          .apply()
+        getSharedPreferences("security_prefs", Context.MODE_PRIVATE).edit {
+          putString("prohibited_objects", input)
+        }
         preview?.stop()
         createCameraSource(selectedModel)
         startCameraSource()
@@ -220,31 +219,26 @@ class LivePreviewActivity :
     cameraSource?.release()
   }
 
-  private val requiredPermissions: Array<String?>
-    get() = try {
-      val info = this.packageManager.getPackageInfo(this.packageName, PackageManager.GET_PERMISSIONS)
-      info.requestedPermissions ?: arrayOfNulls(0)
-    } catch (e: Exception) {
-      arrayOfNulls(0)
+  private fun getRequiredPermissions(): Array<String> {
+    return try {
+      val info = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+      info.requestedPermissions ?: emptyArray()
+    } catch (_: Exception) {
+      emptyArray()
     }
-
-  private fun allPermissionsGranted(): Boolean {
-    for (permission in requiredPermissions) {
-      if (!isPermissionGranted(this, permission)) return false
-    }
-    return true
   }
 
-  private val runtimePermissions: Unit
-    get() {
-      val allNeededPermissions = ArrayList<String>()
-      for (permission in requiredPermissions) {
-        if (!isPermissionGranted(this, permission)) allNeededPermissions.add(permission!!)
-      }
-      if (allNeededPermissions.isNotEmpty()) {
-        ActivityCompat.requestPermissions(this, allNeededPermissions.toTypedArray(), PERMISSION_REQUESTS)
-      }
+  private fun allPermissionsGranted(): Boolean {
+    return getRequiredPermissions().all { isPermissionGranted(this, it) }
+  }
+
+  private fun getRuntimePermissions() {
+    val allNeededPermissions = getRequiredPermissions().filter { !isPermissionGranted(this, it) }
+
+    if (allNeededPermissions.isNotEmpty()) {
+      ActivityCompat.requestPermissions(this, allNeededPermissions.toTypedArray(), PERMISSION_REQUESTS)
     }
+  }
 
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
     if (allPermissionsGranted()) createCameraSource(selectedModel)
@@ -255,8 +249,8 @@ class LivePreviewActivity :
     private const val SECURITY_MODE = "Security Surveillance Mode"
     private const val TAG = "LivePreviewActivity"
     private const val PERMISSION_REQUESTS = 1
-    private fun isPermissionGranted(context: Context, permission: String?): Boolean {
-      return ContextCompat.checkSelfPermission(context, permission!!) == PackageManager.PERMISSION_GRANTED
+    private fun isPermissionGranted(context: Context, permission: String): Boolean {
+      return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
     }
   }
 }

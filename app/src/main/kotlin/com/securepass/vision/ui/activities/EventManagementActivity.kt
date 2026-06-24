@@ -1,6 +1,7 @@
 package com.securepass.vision.ui.activities
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,20 +10,24 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.securepass.vision.R
+import com.securepass.vision.data.api.RetrofitClient
 import com.securepass.vision.data.db.DatabaseHelper
 import com.securepass.vision.model.SecurityEventGroup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class EventManagementActivity : AppCompatActivity() {
 
     private lateinit var dbHelper: DatabaseHelper
     private lateinit var adapter: EventAdapter
-    private val eventsList = mutableListOf<SecurityEventGroup>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,13 +37,13 @@ class EventManagementActivity : AppCompatActivity() {
 
         val toolbar = findViewById<MaterialToolbar>(R.id.event_toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Configuración de Eventos"
+        supportActionBar?.title = getString(R.string.manage_events_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { onBackPressed() }
 
         val rvEvents = findViewById<RecyclerView>(R.id.rv_events)
         rvEvents.layoutManager = LinearLayoutManager(this)
-        adapter = EventAdapter(eventsList,
+        adapter = EventAdapter(
             onDeleteClick = { event -> showDeleteConfirmation(event) },
             onEditClick = { event -> showEditEventDialog(event) }
         )
@@ -48,24 +53,47 @@ class EventManagementActivity : AppCompatActivity() {
             showAddEventDialog()
         }
 
-        loadEvents()
+        syncEventsWithCloud()
     }
 
-    private fun loadEvents() {
-        eventsList.clear()
-        eventsList.addAll(dbHelper.getAllGroups())
-        adapter.notifyDataSetChanged()
+    private fun syncEventsWithCloud() {
+        lifecycleScope.launch {
+            try {
+                // 1. Intentar descargar desde MockAPI (Proyecto 2)
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.eventsInstance.getAllGroups()
+                }
+
+                if (response.isSuccessful) {
+                    val remoteEvents = response.body() ?: emptyList()
+                    // Actualizar DB local con los datos de la nube
+                    withContext(Dispatchers.IO) {
+                        remoteEvents.forEach { dbHelper.insertGroup(it) }
+                    }
+                    Log.d("Sync", "Eventos sincronizados desde la nube")
+                }
+            } catch (_: Exception) {
+                Log.e("Sync", "Error de red, usando datos locales")
+            }
+            loadLocalEvents()
+        }
+    }
+
+    private fun loadLocalEvents() {
+        val newItems = dbHelper.getAllGroups()
+        adapter.updateData(newItems)
     }
 
     private fun showAddEventDialog() {
-        val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_event, null)
+        val container = findViewById<ViewGroup>(android.R.id.content)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_event, container, false)
         val etName = view.findViewById<EditText>(R.id.et_event_name)
         val etLocation = view.findViewById<EditText>(R.id.et_event_location)
         val etProhibited = view.findViewById<EditText>(R.id.et_prohibited_items)
 
         AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setView(view)
-            .setPositiveButton("Guardar") { _, _ ->
+            .setPositiveButton(R.string.action_save) { _, _ ->
                 val name = etName.text.toString()
                 val location = etLocation.text.toString()
                 val prohibited = etProhibited.text.toString()
@@ -76,18 +104,41 @@ class EventManagementActivity : AppCompatActivity() {
                         location = location,
                         prohibitedItems = prohibited
                     )
-                    dbHelper.insertGroup(newGroup)
-                    loadEvents()
-                } else {
-                    Toast.makeText(this, "Nombre y ubicación son obligatorios", Toast.LENGTH_SHORT).show()
+                    saveEvent(newGroup)
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
+    private fun saveEvent(group: SecurityEventGroup) {
+        lifecycleScope.launch {
+            try {
+                // 1. Guardar en la Nube
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.eventsInstance.createGroup(group)
+                }
+                
+                if (response.isSuccessful) {
+                    // 2. Si la nube acepta, guardar en Local con el ID real
+                    val savedGroup = response.body()
+                    if (savedGroup != null) {
+                        withContext(Dispatchers.IO) { dbHelper.insertGroup(savedGroup) }
+                        Toast.makeText(this@EventManagementActivity, R.string.event_saved_cloud, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (_: Exception) {
+                // Fallback: solo local si no hay internet
+                withContext(Dispatchers.IO) { dbHelper.insertGroup(group) }
+                Toast.makeText(this@EventManagementActivity, R.string.event_saved_local, Toast.LENGTH_SHORT).show()
+            }
+            loadLocalEvents()
+        }
+    }
+
     private fun showEditEventDialog(event: SecurityEventGroup) {
-        val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_event, null)
+        val container = findViewById<ViewGroup>(android.R.id.content)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_event, container, false)
         val etName = view.findViewById<EditText>(R.id.et_event_name)
         val etLocation = view.findViewById<EditText>(R.id.et_event_location)
         val etProhibited = view.findViewById<EditText>(R.id.et_prohibited_items)
@@ -98,44 +149,72 @@ class EventManagementActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setView(view)
-            .setPositiveButton("Actualizar") { _, _ ->
-                val name = etName.text.toString()
-                val location = etLocation.text.toString()
-                val prohibited = etProhibited.text.toString()
-
-                if (name.isNotEmpty() && location.isNotEmpty()) {
-                    val updatedEvent = event.copy(
-                        name = name,
-                        location = location,
-                        prohibitedItems = prohibited
-                    )
-                    dbHelper.updateGroup(updatedEvent)
-                    loadEvents()
-                } else {
-                    Toast.makeText(this, "Nombre y ubicación son obligatorios", Toast.LENGTH_SHORT).show()
-                }
+            .setPositiveButton(R.string.action_update) { _, _ ->
+                val updated = event.copy(
+                    name = etName.text.toString(),
+                    location = etLocation.text.toString(),
+                    prohibitedItems = etProhibited.text.toString()
+                )
+                updateEvent(updated)
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
+    }
+
+    private fun updateEvent(event: SecurityEventGroup) {
+        lifecycleScope.launch {
+            try {
+                event.id?.let { id ->
+                    RetrofitClient.eventsInstance.updateGroup(id, event)
+                }
+            } catch (_: Exception) { }
+            withContext(Dispatchers.IO) { dbHelper.updateGroup(event) }
+            loadLocalEvents()
+        }
     }
 
     private fun showDeleteConfirmation(event: SecurityEventGroup) {
         AlertDialog.Builder(this, R.style.CustomAlertDialog)
-            .setTitle("Eliminar Evento")
-            .setMessage("¿Estás seguro de que deseas eliminar el evento '${event.name}'?")
-            .setPositiveButton("Eliminar") { _, _ ->
-                dbHelper.deleteGroup(event.id)
-                loadEvents()
+            .setTitle(R.string.delete_event_title)
+            .setMessage(R.string.delete_event_confirmation)
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                deleteEvent(event)
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
+    private fun deleteEvent(event: SecurityEventGroup) {
+        lifecycleScope.launch {
+            try {
+                event.id?.let { id ->
+                    RetrofitClient.eventsInstance.deleteGroup(id)
+                }
+            } catch (_: Exception) { }
+            withContext(Dispatchers.IO) { dbHelper.deleteGroup(event.id) }
+            loadLocalEvents()
+        }
+    }
+
     inner class EventAdapter(
-        private val list: List<SecurityEventGroup>,
         private val onDeleteClick: (SecurityEventGroup) -> Unit,
         private val onEditClick: (SecurityEventGroup) -> Unit
     ) : RecyclerView.Adapter<EventAdapter.EventViewHolder>() {
+
+        private var list: List<SecurityEventGroup> = emptyList()
+
+        fun updateData(newList: List<SecurityEventGroup>) {
+            val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize(): Int = list.size
+                override fun getNewListSize(): Int = newList.size
+                override fun areItemsTheSame(oldPos: Int, newPos: Int): Boolean =
+                    list[oldPos].id == newList[newPos].id
+                override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean =
+                    list[oldPos] == newList[newPos]
+            })
+            list = newList.toList()
+            diffResult.dispatchUpdatesTo(this)
+        }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventViewHolder {
             val view = LayoutInflater.from(parent.context)
@@ -146,8 +225,8 @@ class EventManagementActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
             val event = list[position]
             holder.tvName.text = event.name
-            holder.tvLocation.text = "Ubicación: ${event.location}"
-            holder.tvProhibited.text = "Prohibido: ${event.prohibitedItems}"
+            holder.tvLocation.text = holder.itemView.context.getString(R.string.event_location_format, event.location)
+            holder.tvProhibited.text = holder.itemView.context.getString(R.string.event_prohibited_format, event.prohibitedItems)
 
             holder.btnEdit.setOnClickListener { onEditClick(event) }
             holder.btnDelete.setOnClickListener { onDeleteClick(event) }

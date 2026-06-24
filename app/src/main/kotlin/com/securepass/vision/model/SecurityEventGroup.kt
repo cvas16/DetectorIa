@@ -1,8 +1,10 @@
 package com.securepass.vision.model
 
 data class SecurityEventGroup(
-    val id: Long = 0,
-    val name: String, // Ejemplo: "Concierto Rock", "Estadio Nacional"
+    val id: String? = null, // MockAPI usa IDs como Strings
+    val name: String,
     val location: String,
-    val prohibitedItems: String // Lista separada por comas: "Knife,Weapon,Bottle"
+    val prohibitedItems: String,
+    val status: String = "Activo",
+    val timestamp: Long = System.currentTimeMillis()
 )

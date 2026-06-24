@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.securepass.vision.R
 import com.securepass.vision.model.DetectionEvent
@@ -13,7 +14,7 @@ import java.util.Date
 import java.util.Locale
 
 class HistoryAdapter(
-    private var events: List<DetectionEvent>,
+    private var events: List<DetectionEvent> = emptyList(),
     private val onItemClick: (DetectionEvent) -> Unit,
     private val onDeleteClick: (DetectionEvent) -> Unit
 ) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
@@ -40,9 +41,16 @@ class HistoryAdapter(
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         holder.timestamp.text = sdf.format(Date(event.timestamp))
         
-        holder.staffInfo.text = "Staff: ${event.userName} | Evento: ${event.eventName}"
+        holder.staffInfo.text = holder.itemView.context.getString(
+            R.string.history_staff_info_format, 
+            event.userName, 
+            event.eventName
+        )
         
-        holder.confidence.text = String.format(Locale.getDefault(), "%.0f%% Certeza", event.confidence * 100)
+        holder.confidence.text = holder.itemView.context.getString(
+            R.string.history_confidence_label,
+            (event.confidence * 100).toInt()
+        )
         
         holder.icon.setImageResource(R.drawable.ic_launcher_lion)
 
@@ -53,7 +61,25 @@ class HistoryAdapter(
     override fun getItemCount() = events.size
 
     fun updateEvents(newEvents: List<DetectionEvent>) {
+        val diffCallback = EventDiffCallback(events, newEvents)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
         events = newEvents
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
+    }
+
+    class EventDiffCallback(
+        private val oldList: List<DetectionEvent>,
+        private val newList: List<DetectionEvent>
+    ) : DiffUtil.Callback() {
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].id == newList[newItemPosition].id
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition] == newList[newItemPosition]
+        }
     }
 }

@@ -181,7 +181,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Monitorear detecciones en la nube"
+                            android:text="Monitorear detecciones"
                             android:textColor="@color/gray"
                             android:textSize="14sp" />
                     </LinearLayout>
