@@ -1,6 +1,6 @@
 # Vigilante AI 
 
-**Vigilante AI ** es una aplicación avanzada de visión artificial para Android diseñada para la seguridad y el monitoreo en tiempo real. Utiliza la potente API de **Google ML Kit** para detectar objetos.
+**Vigilante AI** es una aplicación avanzada de visión artificial para Android diseñada para la seguridad y el monitoreo en tiempo real. Utiliza la potente API de **Google ML Kit** para detectar objetos.
 
 Este proyecto es una evolución optimizada para ofrecer un rendimiento superior en la vigilancia mediante el uso de CameraX y procesamiento de video en tiempo real.
 
